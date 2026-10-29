@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { PostgrestError } from "@supabase/supabase-js";
+import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
@@ -27,6 +28,8 @@ export type Product = {
   salePrice: number;
   stockQuantity: number;
   minStock: number;
+  // Saldo no mínimo ou abaixo dele (coluna gerada no banco).
+  lowStock: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +54,7 @@ function toProduct(row: ProductRow): Product {
     salePrice: Number(row.sale_price),
     stockQuantity: row.stock_quantity,
     minStock: row.min_stock,
+    lowStock: row.low_stock === true,
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -88,7 +92,7 @@ function toUpdateRow(input: ProductUpdateInput): TablesUpdate<"products"> {
 }
 
 // Traduz erros do Postgres/PostgREST para respostas da API.
-function toDataError(error: PostgrestError, conflictMessage: string): DataError {
+export function toDataError(error: PostgrestError, conflictMessage: string): DataError {
   switch (error.code) {
     case "23505":
       return { status: 409, code: "conflict", message: conflictMessage };
@@ -193,6 +197,51 @@ export async function updateProduct(
     return { error: toDataError(error, SKU_TAKEN) };
   }
   return data ? { data: toProduct(data) } : { error: NOT_FOUND };
+}
+
+export type ProductOption = Pick<Product, "id" | "sku" | "name" | "unit" | "stockQuantity">;
+
+// Produtos ativos para escolher num formulário (movimentação, pedido).
+// Memorizado por requisição: a página de estoque usa a lista em dois lugares.
+export const listProductOptions = cache(async (): Promise<DataResult<ProductOption[]>> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, sku, name, unit, stock_quantity")
+    .eq("active", true)
+    .order("name")
+    .limit(1000);
+
+  if (error) {
+    return { error: toDataError(error, "") };
+  }
+  return {
+    data: data.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      unit: p.unit,
+      stockQuantity: p.stock_quantity,
+    })),
+  };
+});
+
+// Produtos ativos com saldo no mínimo ou abaixo, do menor saldo para o maior.
+export async function listLowStockProducts(): Promise<DataResult<Product[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .eq("active", true)
+    .eq("low_stock", true)
+    .order("stock_quantity")
+    .order("name")
+    .limit(50);
+
+  if (error) {
+    return { error: toDataError(error, "") };
+  }
+  return { data: data.map(toProduct) };
 }
 
 export async function listCategories(): Promise<DataResult<Category[]>> {

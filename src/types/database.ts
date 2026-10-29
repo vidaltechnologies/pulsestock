@@ -176,6 +176,7 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          low_stock: boolean;
           min_stock: number;
           name: string;
           sale_price: number;
@@ -192,6 +193,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          low_stock?: never;
           min_stock?: number;
           name: string;
           sale_price: number;
@@ -207,6 +209,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          low_stock?: never;
           min_stock?: number;
           name?: string;
           sale_price?: number;
@@ -314,7 +317,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      user_display_names: {
+        Args: { user_ids: string[] };
+        Returns: {
+          full_name: string;
+          id: string;
+        }[];
+      };
     };
     Enums: {
       app_role: "admin" | "operator";
