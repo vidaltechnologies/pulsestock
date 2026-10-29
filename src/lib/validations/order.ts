@@ -3,14 +3,6 @@ import { z } from "zod";
 export const ORDER_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pendente",
-  confirmed: "Confirmado",
-  shipped: "Enviado",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-};
-
 // Mesmo fluxo da função change_order_status no banco.
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["confirmed", "cancelled"],

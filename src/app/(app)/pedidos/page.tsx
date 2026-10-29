@@ -19,12 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { listOrders } from "@/lib/data/orders";
-import { formatCurrency, formatInteger } from "@/lib/format";
-import { ORDER_STATUS_LABELS, ORDER_STATUSES, orderListQuerySchema } from "@/lib/validations/order";
+import { getI18n } from "@/lib/i18n/server";
+import { ORDER_STATUSES, orderListQuerySchema } from "@/lib/validations/order";
 
-export const metadata: Metadata = {
-  title: "Pedidos",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.orders };
+}
 
 const PAGE_SIZE = 20;
 
@@ -38,28 +39,25 @@ const STATUS_FROM_URL = {
 } as const;
 const STATUS_TO_URL = Object.fromEntries(Object.entries(STATUS_FROM_URL).map(([k, v]) => [v, k]));
 
-const date = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "America/Sao_Paulo" });
-
 type SearchParams = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default function OrdersPage({ searchParams }: PageProps<"/pedidos">) {
+export default async function OrdersPage({ searchParams }: PageProps<"/pedidos">) {
+  const { t } = await getI18n();
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Pedidos</h1>
-          <p className="text-sm text-muted-foreground">
-            Pedidos de venda. O estoque baixa quando o pedido é confirmado.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.meta.orders}</h1>
+          <p className="text-sm text-muted-foreground">{t.orders.subtitle}</p>
         </div>
         <Button asChild>
           <Link href="/pedidos/novo">
             <Plus aria-hidden />
-            Novo pedido
+            {t.orders.newOrder}
           </Link>
         </Button>
       </div>
@@ -82,11 +80,11 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
     pageSize: PAGE_SIZE,
   });
 
-  const result = await listOrders(query);
+  const [result, { t, f }] = await Promise.all([listOrders(query), getI18n()]);
   if (result.error) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        Não foi possível carregar os pedidos. Recarregue a página.
+        {t.orders.loadError}
       </p>
     );
   }
@@ -108,29 +106,29 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
     <div className="flex flex-col gap-4">
       <Form action="/pedidos" className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-          <Label htmlFor="busca">Buscar</Label>
+          <Label htmlFor="busca">{t.common.search}</Label>
           <Input
             id="busca"
             name="busca"
             type="search"
-            placeholder="Número do pedido ou nome do cliente"
+            placeholder={t.orders.searchPlaceholder}
             defaultValue={query.q}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">{t.common.status}</Label>
           <NativeSelect id="status" name="status" defaultValue={query.status ? STATUS_TO_URL[query.status] : ""}>
-            <NativeSelectOption value="">Todos</NativeSelectOption>
+            <NativeSelectOption value="">{t.common.all}</NativeSelectOption>
             {ORDER_STATUSES.map((s) => (
               <NativeSelectOption key={s} value={STATUS_TO_URL[s]}>
-                {ORDER_STATUS_LABELS[s]}
+                {t.orders.statuses[s]}
               </NativeSelectOption>
             ))}
           </NativeSelect>
         </div>
         <Button type="submit" variant="secondary">
           <Search aria-hidden />
-          Filtrar
+          {t.common.filter}
         </Button>
       </Form>
 
@@ -138,11 +136,11 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">Nº</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead className="hidden sm:table-cell">Data</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="w-20">{t.orders.number}</TableHead>
+              <TableHead>{t.common.customer}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t.common.date}</TableHead>
+              <TableHead>{t.common.status}</TableHead>
+              <TableHead className="text-right">{t.common.total}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,8 +148,8 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                   {query.q || query.status || query.customerId
-                    ? "Nenhum pedido encontrado com esses filtros."
-                    : "Nenhum pedido criado ainda."}
+                    ? t.orders.emptyFiltered
+                    : t.orders.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -164,12 +162,12 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
                   </TableCell>
                   <TableCell className="font-medium">{o.customer.name}</TableCell>
                   <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">
-                    {date.format(new Date(o.createdAt))}
+                    {f.date(o.createdAt)}
                   </TableCell>
                   <TableCell>
                     <OrderStatusBadge status={o.status} />
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCurrency(o.totalAmount)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{f.currency(o.totalAmount)}</TableCell>
                 </TableRow>
               ))
             )}
@@ -177,29 +175,29 @@ async function OrderList({ searchParams }: { searchParams: Promise<SearchParams>
         </Table>
       </div>
 
-      <nav aria-label="Paginação" className="flex items-center justify-between gap-4 text-sm">
+      <nav aria-label={t.common.pagination} className="flex items-center justify-between gap-4 text-sm">
         <p className="text-muted-foreground">
-          {total === 1 ? "1 pedido" : `${formatInteger(total)} pedidos`}
-          {pageCount > 1 && ` · página ${query.page} de ${pageCount}`}
+          {t.orders.count(total, f.integer(total))}
+          {pageCount > 1 && t.common.pageOf(query.page, pageCount)}
         </p>
         {pageCount > 1 && (
           <div className="flex gap-2">
             {query.page > 1 ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page - 1)}>Anterior</Link>
+                <Link href={pageHref(query.page - 1)}>{t.common.previous}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Anterior
+                {t.common.previous}
               </Button>
             )}
             {query.page < pageCount ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page + 1)}>Próxima</Link>
+                <Link href={pageHref(query.page + 1)}>{t.common.next}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Próxima
+                {t.common.next}
               </Button>
             )}
           </div>

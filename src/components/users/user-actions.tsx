@@ -4,15 +4,13 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { ApiErrorBody } from "@/lib/api";
 import type { AppRole } from "@/lib/auth";
 
-const ROLE_OPTIONS: { value: AppRole; label: string }[] = [
-  { value: "operator", label: "Operador" },
-  { value: "admin", label: "Administrador" },
-];
+const ROLE_OPTIONS: AppRole[] = ["operator", "admin"];
 
 // Perfil e status de um usuário, alterados pelo admin com PATCH /api/users/{id}.
 export function UserActions({
@@ -27,6 +25,7 @@ export function UserActions({
   active: boolean;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, setPending] = useState<"role" | "active" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,13 +43,13 @@ export function UserActions({
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
-        setError(body?.error.message ?? "Não foi possível alterar o usuário.");
+        setError(body?.error.message ?? t.users.error);
         return false;
       }
       router.refresh();
       return true;
     } catch {
-      setError("Não foi possível conectar. Verifique sua internet.");
+      setError(t.common.connectionError);
       return false;
     } finally {
       setPending(null);
@@ -61,18 +60,17 @@ export function UserActions({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <NativeSelect
-          aria-label={`Perfil de ${name}`}
+          aria-label={t.users.roleOf(name)}
           value={role}
           disabled={pending !== null}
           onChange={(e) => {
             const next = e.target.value as AppRole;
-            const label = ROLE_OPTIONS.find((o) => o.value === next)?.label.toLowerCase();
-            void save({ role: next }, `Mudar o perfil de ${name} para ${label}?`);
+            void save({ role: next }, t.users.changeRole(name, t.roles[next].toLowerCase()));
           }}
         >
           {ROLE_OPTIONS.map((option) => (
-            <NativeSelectOption key={option.value} value={option.value}>
-              {option.label}
+            <NativeSelectOption key={option} value={option}>
+              {t.roles[option]}
             </NativeSelectOption>
           ))}
         </NativeSelect>
@@ -84,12 +82,12 @@ export function UserActions({
           onClick={() =>
             void save(
               { active: !active },
-              active ? `Desativar ${name}? A pessoa perde o acesso na hora.` : `Reativar ${name}?`,
+              active ? t.users.deactivateQuestion(name) : t.users.reactivateQuestion(name),
             )
           }
         >
           {pending === "active" && <Loader2 className="animate-spin" aria-hidden />}
-          {active ? "Desativar" : "Reativar"}
+          {active ? t.users.deactivate : t.users.reactivate}
         </Button>
       </div>
       {error && (

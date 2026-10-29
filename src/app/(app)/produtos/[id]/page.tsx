@@ -10,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireRole } from "@/lib/auth";
 import { getProduct, listCategories } from "@/lib/data/products";
-import { formatInteger } from "@/lib/format";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Editar produto",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.editProduct };
+}
 
 export default function EditProductPage({ params }: PageProps<"/produtos/[id]">) {
   return (
@@ -31,7 +32,11 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
     notFound();
   }
 
-  const [product, categories] = await Promise.all([getProduct(id), listCategories()]);
+  const [product, categories, { t, f }] = await Promise.all([
+    getProduct(id),
+    listCategories(),
+    getI18n(),
+  ]);
   if (product.error?.code === "not_found") {
     notFound();
   }
@@ -46,23 +51,23 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
           <Badge variant={p.active ? "secondary" : "outline"}>
-            {p.active ? "Ativo" : "Inativo"}
+            {p.active ? t.common.active : t.common.inactive}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Saldo atual: {formatInteger(p.stockQuantity)} {p.unit}. O saldo muda pelas{" "}
+          {t.products.currentStock(f.integer(p.stockQuantity), p.unit)}{" "}
           <Link
             href={`/estoque?produto=${p.id}`}
             className="text-primary underline underline-offset-4"
           >
-            movimentações de estoque
+            {t.products.stockMovements}
           </Link>
           .
         </p>
       </div>
       <ProductForm product={p} categories={categories.data} />
       <div className="max-w-2xl border-t pt-6">
-        <StatusToggleButton endpoint={`/api/products/${p.id}`} active={p.active} noun="produto" />
+        <StatusToggleButton endpoint={`/api/products/${p.id}`} active={p.active} noun={t.products.noun} />
       </div>
     </div>
   );

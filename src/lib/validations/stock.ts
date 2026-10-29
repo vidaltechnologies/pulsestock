@@ -3,12 +3,6 @@ import { z } from "zod";
 export const STOCK_MOVEMENT_TYPES = ["in", "out", "adjustment"] as const;
 export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
 
-export const STOCK_MOVEMENT_LABELS: Record<StockMovementType, string> = {
-  in: "Entrada",
-  out: "Saída",
-  adjustment: "Ajuste",
-};
-
 // Tipos que só o administrador registra (o RLS aplica a mesma regra).
 export const ADMIN_ONLY_TYPES: StockMovementType[] = ["out", "adjustment"];
 

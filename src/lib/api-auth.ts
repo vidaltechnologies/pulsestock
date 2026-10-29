@@ -11,12 +11,12 @@ export async function requireApiUser(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { error: apiError(401, "unauthorized", "Faça login para continuar.") };
+    return { error: await apiError(401, "unauthorized", "Faça login para continuar.") };
   }
 
   if (role && user.role !== role) {
     return {
-      error: apiError(403, "forbidden", "Seu perfil não tem permissão para esta ação."),
+      error: await apiError(403, "forbidden", "Seu perfil não tem permissão para esta ação."),
     };
   }
 

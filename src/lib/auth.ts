@@ -72,8 +72,3 @@ export async function requireRole(role: AppRole) {
   }
   return user;
 }
-
-export const ROLE_LABELS: Record<AppRole, string> = {
-  admin: "Administrador",
-  operator: "Operador",
-};

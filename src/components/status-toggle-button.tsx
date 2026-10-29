@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import type { ApiErrorBody } from "@/lib/api";
 
@@ -19,6 +20,7 @@ export function StatusToggleButton({
   noun: string;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,12 +35,12 @@ export function StatusToggleButton({
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
-        setError(body?.error.message ?? "Não foi possível alterar o status.");
+        setError(body?.error.message ?? t.common.statusError);
         return;
       }
       router.refresh();
     } catch {
-      setError("Não foi possível conectar. Verifique sua internet.");
+      setError(t.common.connectionError);
     } finally {
       setPending(false);
     }
@@ -48,7 +50,7 @@ export function StatusToggleButton({
     <div className="flex flex-col items-start gap-2">
       <Button type="button" variant={active ? "outline" : "secondary"} disabled={pending} onClick={toggle}>
         {pending && <Loader2 className="animate-spin" aria-hidden />}
-        {active ? `Inativar ${noun}` : `Reativar ${noun}`}
+        {active ? t.common.deactivate(noun) : t.common.reactivate(noun)}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">

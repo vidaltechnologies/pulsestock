@@ -1,10 +1,11 @@
 import { Badge } from "@/components/ui/badge";
-import { ROLE_LABELS, requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
+import { getI18n } from "@/lib/i18n/server";
 
 import { LogoutButton } from "./logout-button";
 
 export async function UserMenu() {
-  const user = await requireUser();
+  const [user, { t }] = await Promise.all([requireUser(), getI18n()]);
 
   return (
     <div className="flex items-center gap-3">
@@ -13,7 +14,7 @@ export async function UserMenu() {
         <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
       </div>
       <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-        {ROLE_LABELS[user.role]}
+        {t.roles[user.role]}
       </Badge>
       <LogoutButton />
     </div>

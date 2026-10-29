@@ -47,7 +47,8 @@ async function withNames(rows: MovementRow[]): Promise<StockMovement[]> {
     reason: r.reason,
     orderId: r.order_id,
     createdAt: r.created_at,
-    product: r.product ?? { id: "", sku: "", name: "Produto removido", unit: "" },
+    // Sem nome: a tela mostra "produto removido" no idioma escolhido.
+    product: r.product ?? { id: "", sku: "", name: "", unit: "" },
     createdBy: { id: r.created_by, name: names.get(r.created_by) ?? null },
   }));
 }

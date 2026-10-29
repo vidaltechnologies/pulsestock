@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,7 @@ function toFormValues(customer?: Customer): CustomerFormValues {
 // Cadastro e edição de cliente, com o mesmo esquema Zod da API.
 export function CustomerForm({ customer }: { customer?: Customer }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -63,7 +65,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
         body: JSON.stringify(payload),
       });
     } catch {
-      setFormError("Não foi possível conectar. Verifique sua internet.");
+      setFormError(t.common.connectionError);
       return;
     }
 
@@ -81,7 +83,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
           }
         }
       }
-      setFormError(body?.error.message ?? "Não foi possível salvar. Tente de novo.");
+      setFormError(body?.error.message ?? t.common.saveError);
       return;
     }
 
@@ -91,12 +93,12 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex max-w-2xl flex-col gap-5">
-      <Field id="name" label="Nome ou razão social" error={errors.name?.message}>
+      <Field id="name" label={t.customers.form.name} error={errors.name?.message}>
         <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="document" label="CPF ou CNPJ (opcional)" error={errors.document?.message}>
+        <Field id="document" label={t.customers.form.document} error={errors.document?.message}>
           <Input
             id="document"
             inputMode="numeric"
@@ -105,7 +107,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
             {...register("document")}
           />
         </Field>
-        <Field id="phone" label="Telefone (opcional)" error={errors.phone?.message}>
+        <Field id="phone" label={t.customers.form.phone} error={errors.phone?.message}>
           <Input
             id="phone"
             type="tel"
@@ -116,15 +118,15 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
         </Field>
       </div>
 
-      <Field id="email" label="E-mail (opcional)" error={errors.email?.message}>
+      <Field id="email" label={t.customers.form.email} error={errors.email?.message}>
         <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-[1fr_8rem]">
-        <Field id="city" label="Cidade (opcional)" error={errors.city?.message}>
+        <Field id="city" label={t.customers.form.city} error={errors.city?.message}>
           <Input id="city" aria-invalid={!!errors.city} {...register("city")} />
         </Field>
-        <Field id="state" label="UF" error={errors.state?.message}>
+        <Field id="state" label={t.customers.form.state} error={errors.state?.message}>
           <NativeSelect
             id="state"
             className="w-full"
@@ -154,10 +156,10 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-          {customer ? "Salvar alterações" : "Cadastrar cliente"}
+          {customer ? t.common.saveChanges : t.customers.form.create}
         </Button>
         <Button asChild variant="outline">
-          <Link href="/clientes">Cancelar</Link>
+          <Link href="/clientes">{t.common.cancel}</Link>
         </Button>
       </div>
     </form>
@@ -175,13 +177,14 @@ function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const { tm } = useI18n();
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       {children}
       {error && (
         <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
+          {tm(error)}
         </p>
       )}
     </div>

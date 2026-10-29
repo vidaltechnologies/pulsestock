@@ -4,27 +4,31 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { LoginForm } from "@/components/auth/login-form";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Entrar",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.login };
+}
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const { t } = await getI18n();
+
   return (
-    <main className="flex flex-1 items-center justify-center bg-muted/40 px-4 py-12">
+    <main className="relative flex flex-1 items-center justify-center bg-muted/40 px-4 py-12">
+      <LanguageSwitcher className="absolute top-4 right-4 sm:top-6 sm:right-6" />
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
-        <Link href="/" aria-label="Pulse Stock, página inicial">
+        <Link href="/" aria-label={t.login.home}>
           <Image src="/brand/logo-light.svg" alt="Pulse Stock" width={200} height={56} priority />
         </Link>
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-xl">
-              <h1>Entrar</h1>
+              <h1>{t.login.title}</h1>
             </CardTitle>
-            <CardDescription>
-              Use o e-mail e a senha cadastrados pelo administrador.
-            </CardDescription>
+            <CardDescription>{t.login.description}</CardDescription>
           </CardHeader>
           <CardContent>
             {/* useSearchParams lê a URL da requisição, então fica atrás de Suspense */}

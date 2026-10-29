@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import type { AppRole } from "@/lib/auth";
 
 import { NavList } from "./nav-list";
@@ -16,5 +17,6 @@ export function AppNav({
   role: AppRole | null;
 }) {
   const pathname = usePathname();
-  return <NavList orientation={orientation} role={role} pathname={pathname} />;
+  const { locale } = useI18n();
+  return <NavList orientation={orientation} role={role} pathname={pathname} locale={locale} />;
 }
