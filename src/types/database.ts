@@ -1,6 +1,11 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
+  // Versão do PostgREST do projeto na nuvem, como gerado por
+  // `supabase gen types --linked`. Permite ao supabase-js inferir os tipos certos.
+  __InternalSupabase: {
+    PostgrestVersion: "14.18";
+  };
   public: {
     Tables: {
       categories: {

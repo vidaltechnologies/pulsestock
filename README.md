@@ -10,7 +10,7 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | --- | --- | --- |
 | 0 | Base Next.js, Tailwind, shadcn/ui e identidade visual | Concluída |
 | 1 | Esquema do banco (enums, tabelas, restrições, índices) e tipos TypeScript | Concluída |
-| 2 | Autenticação com Supabase Auth | A fazer |
+| 2 | Login com Supabase Auth, proxy de sessão e layout logado | Concluída |
 | 3 | Perfis de acesso e políticas RLS | A fazer |
 | 4–9 | Produtos, estoque, clientes, pedidos, dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
@@ -37,7 +37,6 @@ As migrações ficam em `supabase/migrations/`. A Supabase CLI já vem como depe
 ```bash
 npm run db:start   # sobe o Supabase local
 npm run db:reset   # recria o banco aplicando as migrações
-npm run db:types   # gera src/types/database.ts
 ```
 
 **Projeto na nuvem:**
@@ -64,6 +63,25 @@ npx supabase db push
 
 O estoque é baixado quando o pedido é confirmado. O RLS está ativado em todas as tabelas; as políticas por perfil entram na etapa 3.
 
+## Autenticação
+
+- Login por e-mail e senha (Supabase Auth). O cadastro público fica desativado: usuários são criados pelo painel do Supabase.
+- Cada usuário novo ganha um perfil `operator` automaticamente. Para tornar alguém administrador, rode no SQL Editor do Supabase:
+
+  ```sql
+  update public.profiles
+  set role = 'admin'
+  where id = (select id from auth.users where email = 'seu-email@exemplo.com');
+  ```
+
+- `src/proxy.ts` renova a sessão a cada requisição e manda para `/login` quem acessa a área logada sem sessão. A autorização de fato acontece nas páginas, na API e no RLS.
+- A sessão fica em cookies `httpOnly`, lidos só no servidor.
+
+| Rota | Uso |
+| --- | --- |
+| `POST /api/auth/login` | `{ email, password }` validado com Zod. 401 para credenciais erradas, 403 para usuário desativado |
+| `POST /api/auth/logout` | Encerra a sessão |
+
 ## Scripts
 
 | Comando | O que faz |
@@ -74,4 +92,4 @@ O estoque é baixado quando o pedido é confirmado. O RLS está ativado em todas
 | `npm run typecheck` | Gera os tipos de rota do Next.js e roda o TypeScript |
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
-| `npm run db:types` | Gera os tipos TypeScript a partir do banco local |
+| `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |
