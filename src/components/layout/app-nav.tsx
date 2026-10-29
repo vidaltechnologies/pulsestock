@@ -5,16 +5,24 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
-import { NAV_ITEMS } from "./nav-items";
+import type { AppRole } from "@/lib/auth";
 
-export function AppNav({ orientation }: { orientation: "vertical" | "horizontal" }) {
+import { navItemsFor } from "./nav-items";
+
+export function AppNav({
+  orientation,
+  role,
+}: {
+  orientation: "vertical" | "horizontal";
+  role: AppRole | null;
+}) {
   const pathname = usePathname();
   const vertical = orientation === "vertical";
 
   return (
     <nav aria-label="Menu principal">
       <ul className={cn("flex gap-1", vertical ? "flex-col" : "overflow-x-auto")}>
-        {NAV_ITEMS.map(({ href, label, icon: Icon, available }) => {
+        {navItemsFor(role).map(({ href, label, icon: Icon, available }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           const itemClass = cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap",

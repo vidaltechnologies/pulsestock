@@ -8,12 +8,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { AppRole } from "@/lib/auth";
+
 export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   // Módulos das próximas etapas aparecem no menu, mas ainda sem link.
   available: boolean;
+  // Quando definido, o item só aparece para esse perfil.
+  role?: AppRole;
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -22,5 +26,9 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/estoque", label: "Estoque", icon: Boxes, available: false },
   { href: "/clientes", label: "Clientes", icon: Users, available: false },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList, available: false },
-  { href: "/usuarios", label: "Usuários", icon: ShieldCheck, available: false },
+  { href: "/usuarios", label: "Usuários", icon: ShieldCheck, available: false, role: "admin" },
 ];
+
+export function navItemsFor(role: AppRole | null) {
+  return NAV_ITEMS.filter((item) => !item.role || item.role === role);
+}

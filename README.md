@@ -11,7 +11,7 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 0 | Base Next.js, Tailwind, shadcn/ui e identidade visual | Concluída |
 | 1 | Esquema do banco (enums, tabelas, restrições, índices) e tipos TypeScript | Concluída |
 | 2 | Login com Supabase Auth, proxy de sessão e layout logado | Concluída |
-| 3 | Perfis de acesso e políticas RLS | A fazer |
+| 3 | Perfis de acesso e políticas RLS | Concluída |
 | 4–9 | Produtos, estoque, clientes, pedidos, dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
@@ -61,7 +61,7 @@ npx supabase db push
 | `orders` | Pedidos de venda e seu status |
 | `order_items` | Itens do pedido com preço congelado no momento da venda |
 
-O estoque é baixado quando o pedido é confirmado. O RLS está ativado em todas as tabelas; as políticas por perfil entram na etapa 3.
+O estoque é baixado quando o pedido é confirmado.
 
 ## Autenticação
 
@@ -81,6 +81,25 @@ O estoque é baixado quando o pedido é confirmado. O RLS está ativado em todas
 | --- | --- |
 | `POST /api/auth/login` | `{ email, password }` validado com Zod. 401 para credenciais erradas, 403 para usuário desativado |
 | `POST /api/auth/logout` | Encerra a sessão |
+| `GET /api/me` | Usuário logado e perfil (401 sem sessão) |
+
+## Perfis de acesso
+
+As regras ficam no banco (RLS e privilégios por coluna, em `supabase/migrations/20261029000003_rls_policies.sql`) e são repetidas no app para mostrar só o que cada perfil pode fazer.
+
+| Recurso | Administrador | Operador |
+| --- | --- | --- |
+| Perfis | Lê todos; altera nome, perfil e status | Lê o próprio |
+| Produtos e categorias | Cria, edita e inativa | Consulta |
+| Estoque | Entradas, saídas manuais e ajustes | Entradas |
+| Clientes | Cria, edita e inativa | Cria e edita |
+| Pedidos e itens | Cria e edita enquanto pendente | Cria e edita enquanto pendente |
+
+- Sem login (`anon`) e com perfil inativo, nenhuma tabela é acessível.
+- Nada é excluído fisicamente, exceto itens de pedido pendente. Registros são inativados.
+- Saldo de estoque, status e total do pedido não podem ser alterados direto pela API. Eles mudam só pelas funções das etapas de estoque e pedidos.
+
+Para conferir as regras no banco, rode `npm run db:test:rls`. O script `supabase/tests/rls_check.sql` cria usuários e dados de teste dentro de uma transação, testa 45 operações por perfil e desfaz tudo no final.
 
 ## Scripts
 
@@ -92,4 +111,5 @@ O estoque é baixado quando o pedido é confirmado. O RLS está ativado em todas
 | `npm run typecheck` | Gera os tipos de rota do Next.js e roda o TypeScript |
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
+| `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |

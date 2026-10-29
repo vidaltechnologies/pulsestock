@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { AppNav } from "@/components/layout/app-nav";
+import { RoleNav } from "@/components/layout/role-nav";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -13,7 +14,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <Link href="/dashboard" className="px-3" aria-label="Pulse Stock, dashboard">
           <Image src="/brand/logo-light.svg" alt="Pulse Stock" width={144} height={40} priority />
         </Link>
-        <AppNav orientation="vertical" />
+        <Suspense fallback={<AppNav orientation="vertical" role={null} />}>
+          <RoleNav orientation="vertical" />
+        </Suspense>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -30,7 +33,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
             </div>
           </div>
           <div className="md:hidden">
-            <AppNav orientation="horizontal" />
+            <Suspense fallback={<AppNav orientation="horizontal" role={null} />}>
+              <RoleNav orientation="horizontal" />
+            </Suspense>
           </div>
         </header>
 
