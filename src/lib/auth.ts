@@ -53,6 +53,15 @@ export async function requireUser() {
   return user;
 }
 
+// Para páginas restritas a um perfil: quem não tem o perfil volta ao dashboard.
+export async function requireRole(role: AppRole) {
+  const user = await requireUser();
+  if (user.role !== role) {
+    redirect("/dashboard");
+  }
+  return user;
+}
+
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Administrador",
   operator: "Operador",

@@ -11,7 +11,8 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --linked --schema public > src/types/database.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > src/types/database.ts",
+    "db:test:rls": "supabase db query --linked -f supabase/tests/rls_check.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^6.0.2",
