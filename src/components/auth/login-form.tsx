@@ -23,7 +23,11 @@ function safeNextPath(next: string | null) {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(() =>
+    searchParams.get("motivo") === "desativado"
+      ? "Seu acesso foi desativado. Fale com um administrador."
+      : null,
+  );
 
   const {
     register,
