@@ -45,11 +45,16 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
-          <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Ativo" : "Inativo"}</Badge>
+          <Badge variant={p.active ? "secondary" : "outline"}>
+            {p.active ? "Ativo" : "Inativo"}
+          </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
           Saldo atual: {formatInteger(p.stockQuantity)} {p.unit}. O saldo muda pelas{" "}
-          <Link href={`/estoque?produto=${p.id}`} className="text-primary underline-offset-4 hover:underline">
+          <Link
+            href={`/estoque?produto=${p.id}`}
+            className="text-primary underline underline-offset-4"
+          >
             movimentações de estoque
           </Link>
           .

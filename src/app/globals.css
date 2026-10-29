@@ -5,7 +5,9 @@
 
 /*
  * Tema Pulse Stock: base slate do shadcn/ui com as cores da marca.
- * Azul #0B6CFF (primary) e turquesa #00D1C1 (degradê do símbolo).
+ * Azul #0B6CFF e turquesa #00D1C1 (degradê do símbolo e gráficos). O primary
+ * usa um tom um pouco mais escuro do azul (#015FE8) para texto branco e
+ * texto azul sobre fundo claro passarem do contraste 4,5:1 (WCAG AA).
  */
 :root {
   --radius: 0.625rem;
@@ -15,7 +17,7 @@
   --card-foreground: oklch(0.208 0.04 265.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.208 0.04 265.8);
-  --primary: oklch(0.576 0.233 260.4);
+  --primary: oklch(0.53 0.22 260.4);
   --primary-foreground: oklch(0.984 0.003 247.9);
   --secondary: oklch(0.968 0.007 247.9);
   --secondary-foreground: oklch(0.208 0.04 265.8);
@@ -35,7 +37,7 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.984 0.003 247.9);
   --sidebar-foreground: oklch(0.208 0.04 265.8);
-  --sidebar-primary: oklch(0.576 0.233 260.4);
+  --sidebar-primary: oklch(0.53 0.22 260.4);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.9);
   --sidebar-accent: oklch(0.968 0.007 247.9);
   --sidebar-accent-foreground: oklch(0.208 0.04 265.8);

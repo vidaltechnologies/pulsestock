@@ -110,7 +110,10 @@ async function DashboardContent({
     <>
       <section
         aria-label="Indicadores do mês"
-        className={cn("grid gap-4 sm:grid-cols-2", showCost ? "xl:grid-cols-3" : "xl:grid-cols-4")}
+        className={cn(
+          "grid grid-cols-2 gap-3 sm:gap-4",
+          showCost ? "xl:grid-cols-3" : "xl:grid-cols-4",
+        )}
       >
         <StatTile label={`Vendas em ${month}`} value={formatCurrency(data.monthSales)} hero />
         <StatTile label="Pedidos vendidos no mês" value={formatInteger(data.monthOrders)} />
@@ -218,13 +221,13 @@ function StatTile({
   hero?: boolean;
 }) {
   return (
-    <Card className="gap-2 py-5">
-      <CardContent className="flex flex-col gap-1 px-5">
+    <Card className="gap-2 py-4 sm:py-5">
+      <CardContent className="flex flex-col gap-1 px-4 sm:px-5">
         <p className="text-sm text-muted-foreground">{label}</p>
         <p
           className={cn(
             "font-semibold tabular-nums tracking-tight",
-            hero ? "text-3xl" : "text-2xl",
+            hero ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl",
           )}
         >
           {value}
