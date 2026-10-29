@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   Boxes,
   ClipboardList,
@@ -8,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -68,6 +70,9 @@ export default function Home() {
             abaixo estão em desenvolvimento.
           </p>
         </div>
+        <Button asChild size="lg" className="self-start">
+          <Link href="/login">Entrar no sistema</Link>
+        </Button>
       </header>
 
       <section
