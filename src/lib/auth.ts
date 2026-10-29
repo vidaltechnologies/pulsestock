@@ -1,7 +1,6 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
@@ -19,10 +18,6 @@ export type CurrentUser = {
 // Usuário logado e ativo, ou null. Memorizado por requisição com cache() do
 // React para não repetir a consulta em vários componentes da mesma página.
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  // getClaims() lê o relógio para checar a validade do token. connection()
-  // deixa claro para o Next.js que isso só roda na requisição, não no
-  // pré-render.
-  await connection();
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();

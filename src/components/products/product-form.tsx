@@ -138,7 +138,7 @@ export function ProductForm({
         <Field id="categoryId" label="Categoria" error={errors.categoryId?.message}>
           <NativeSelect
             id="categoryId"
-            className="w-full"
+            className="w-full" wrapperClassName="w-full"
             aria-invalid={!!errors.categoryId}
             {...register("categoryId")}
           >

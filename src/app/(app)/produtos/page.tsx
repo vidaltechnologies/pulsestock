@@ -148,7 +148,6 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
               </TableRow>
             ) : (
               items.map((product) => {
-                const low = product.stockQuantity <= product.minStock && product.minStock > 0;
                 return (
                   <TableRow key={product.id}>
                     <TableCell className="font-mono text-xs">{product.sku}</TableCell>
@@ -161,7 +160,7 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       <span className="inline-flex items-center gap-2">
-                        {low && <Badge variant="destructive">Baixo</Badge>}
+                        {product.lowStock && <Badge variant="destructive">Baixo</Badge>}
                         {formatInteger(product.stockQuantity)} {product.unit}
                       </span>
                     </TableCell>

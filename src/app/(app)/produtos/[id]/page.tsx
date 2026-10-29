@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -47,8 +48,11 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
           <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Ativo" : "Inativo"}</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Saldo atual: {formatInteger(p.stockQuantity)} {p.unit}. O saldo muda pelas movimentações de
-          estoque.
+          Saldo atual: {formatInteger(p.stockQuantity)} {p.unit}. O saldo muda pelas{" "}
+          <Link href={`/estoque?produto=${p.id}`} className="text-primary underline-offset-4 hover:underline">
+            movimentações de estoque
+          </Link>
+          .
         </p>
       </div>
       <ProductForm product={p} categories={categories.data} />

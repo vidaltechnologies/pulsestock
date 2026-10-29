@@ -13,7 +13,8 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 2 | Login com Supabase Auth, proxy de sessão e layout logado | Concluída |
 | 3 | Perfis de acesso e políticas RLS | Concluída |
 | 4 | Produtos e categorias: API, listagem com busca e cadastro | Concluída |
-| 5–9 | Estoque, clientes, pedidos, dashboard, usuários | A fazer |
+| 5 | Estoque: movimentações, saldo por gatilho e alerta de mínimo | Concluída |
+| 6–9 | Clientes, pedidos, dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -118,6 +119,27 @@ Telas em `/produtos` (lista com busca por nome ou SKU, filtro por categoria e st
 - O saldo (`stockQuantity`) é só leitura: o produto nasce com zero e o saldo muda pelas movimentações de estoque (etapa 5).
 - A validação fica em `src/lib/validations/product.ts` e é a mesma no formulário e na API. Os testes estão em `product.test.ts` (`npm test`).
 
+## Estoque
+
+O saldo (`products.stock_quantity`) só muda por movimentações em `stock_movements`. Um gatilho no banco (`20261029000004_stock.sql`) aplica cada movimentação ao saldo na mesma transação, travando o produto para que movimentações simultâneas não se atropelem. Uma saída ou um ajuste que deixaria o saldo negativo é recusado, e nada é gravado.
+
+| Tipo | Quantidade | Quem registra |
+| --- | --- | --- |
+| Entrada | Positiva, soma ao saldo | Admin e operador |
+| Saída | Positiva, subtrai do saldo | Admin |
+| Ajuste | Diferença com sinal (ex.: `-3`) | Admin |
+
+- A tela `/estoque` tem o formulário de movimentação, o alerta de estoque baixo (produtos ativos com saldo no mínimo ou abaixo, pela coluna gerada `low_stock`) e o histórico com filtros por produto e tipo.
+- O histórico mostra quem fez cada movimentação. Como o operador só lê o próprio perfil, os nomes vêm da função `user_display_names`, que devolve apenas id e nome.
+- O histórico é imutável: não há edição nem exclusão. Para corrigir, registre um ajuste.
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/stock-movements` | Histórico. Filtros: `productId`, `type` (`in`, `out`, `adjustment`), `page`, `pageSize` | Ambos |
+| `POST /api/stock-movements` | `{ productId, type, quantity, reason? }`. Devolve a movimentação e o novo saldo. Saldo insuficiente → 409 `insufficient_stock` | Entrada: ambos · Saída e ajuste: admin |
+
+Para conferir as regras de saldo no banco, rode `npm run db:test:stock` (22 verificações, sem gravar nada).
+
 ## Scripts
 
 | Comando | O que faz |
@@ -130,4 +152,5 @@ Telas em `/produtos` (lista com busca por nome ou SKU, filtro por categoria e st
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |
+| `npm run db:test:stock` | Verifica as regras de saldo de estoque no projeto vinculado (sem gravar nada) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |
