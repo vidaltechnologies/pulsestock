@@ -199,7 +199,10 @@ export async function updateProduct(
   return data ? { data: toProduct(data) } : { error: NOT_FOUND };
 }
 
-export type ProductOption = Pick<Product, "id" | "sku" | "name" | "unit" | "stockQuantity">;
+export type ProductOption = Pick<
+  Product,
+  "id" | "sku" | "name" | "unit" | "stockQuantity" | "salePrice"
+>;
 
 // Produtos ativos para escolher num formulário (movimentação, pedido).
 // Memorizado por requisição: a página de estoque usa a lista em dois lugares.
@@ -207,7 +210,7 @@ export const listProductOptions = cache(async (): Promise<DataResult<ProductOpti
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, sku, name, unit, stock_quantity")
+    .select("id, sku, name, unit, stock_quantity, sale_price")
     .eq("active", true)
     .order("name")
     .limit(1000);
@@ -222,6 +225,7 @@ export const listProductOptions = cache(async (): Promise<DataResult<ProductOpti
       name: p.name,
       unit: p.unit,
       stockQuantity: p.stock_quantity,
+      salePrice: Number(p.sale_price),
     })),
   };
 });
