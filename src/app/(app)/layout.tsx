@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { AppNav } from "@/components/layout/app-nav";
+import { NavList } from "@/components/layout/nav-list";
 import { RoleNav } from "@/components/layout/role-nav";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <Link href="/dashboard" className="px-3" aria-label="Pulse Stock, dashboard">
           <Image src="/brand/logo-light.svg" alt="Pulse Stock" width={144} height={40} priority />
         </Link>
-        <Suspense fallback={<AppNav orientation="vertical" role={null} />}>
+        <Suspense fallback={<NavList orientation="vertical" role={null} pathname={null} />}>
           <RoleNav orientation="vertical" />
         </Suspense>
       </aside>
@@ -33,7 +33,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
             </div>
           </div>
           <div className="md:hidden">
-            <Suspense fallback={<AppNav orientation="horizontal" role={null} />}>
+            <Suspense fallback={<NavList orientation="horizontal" role={null} pathname={null} />}>
               <RoleNav orientation="horizontal" />
             </Suspense>
           </div>

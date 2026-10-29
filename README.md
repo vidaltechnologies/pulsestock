@@ -12,7 +12,8 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 1 | Esquema do banco (enums, tabelas, restrições, índices) e tipos TypeScript | Concluída |
 | 2 | Login com Supabase Auth, proxy de sessão e layout logado | Concluída |
 | 3 | Perfis de acesso e políticas RLS | Concluída |
-| 4–9 | Produtos, estoque, clientes, pedidos, dashboard, usuários | A fazer |
+| 4 | Produtos e categorias: API, listagem com busca e cadastro | Concluída |
+| 5–9 | Estoque, clientes, pedidos, dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -101,6 +102,22 @@ As regras ficam no banco (RLS e privilégios por coluna, em `supabase/migrations
 
 Para conferir as regras no banco, rode `npm run db:test:rls`. O script `supabase/tests/rls_check.sql` cria usuários e dados de teste dentro de uma transação, testa 45 operações por perfil e desfaz tudo no final.
 
+## Produtos
+
+Telas em `/produtos` (lista com busca por nome ou SKU, filtro por categoria e status, paginação de 20 itens), `/produtos/novo`, `/produtos/{id}` e `/produtos/categorias`. O operador só consulta; cadastro, edição, inativação e categorias são do administrador.
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/products` | Lista. Filtros: `q`, `categoryId`, `status` (`active`, `inactive`, `all`), `page`, `pageSize` (até 100) | Ambos |
+| `POST /api/products` | Cadastra. Corpo: `sku`, `name`, `salePrice` e opcionais `description`, `categoryId`, `unit`, `costPrice`, `minStock` | Admin |
+| `GET /api/products/{id}` | Detalhe | Ambos |
+| `PATCH /api/products/{id}` | Edição parcial. Inativar: `{ "active": false }` | Admin |
+| `GET /api/categories` · `POST /api/categories` | Lista e cadastra categorias (`{ "name" }`) | Ambos · Admin |
+
+- Erros seguem `{ error: { code, message, details } }`: 400 com mensagens por campo, 401, 403, 404 e 409 para SKU ou categoria repetidos.
+- O saldo (`stockQuantity`) é só leitura: o produto nasce com zero e o saldo muda pelas movimentações de estoque (etapa 5).
+- A validação fica em `src/lib/validations/product.ts` e é a mesma no formulário e na API. Os testes estão em `product.test.ts` (`npm test`).
+
 ## Scripts
 
 | Comando | O que faz |
@@ -109,6 +126,7 @@ Para conferir as regras no banco, rode `npm run db:test:rls`. O script `supabase
 | `npm run build` | Build de produção |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Gera os tipos de rota do Next.js e roda o TypeScript |
+| `npm test` | Testes unitários (Vitest) |
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |

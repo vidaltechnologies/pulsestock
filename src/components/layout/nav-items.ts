@@ -22,7 +22,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, available: true },
-  { href: "/produtos", label: "Produtos", icon: Package, available: false },
+  { href: "/produtos", label: "Produtos", icon: Package, available: true },
   { href: "/estoque", label: "Estoque", icon: Boxes, available: false },
   { href: "/clientes", label: "Clientes", icon: Users, available: false },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList, available: false },
