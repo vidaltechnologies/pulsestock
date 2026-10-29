@@ -15,7 +15,8 @@
     "db:types": "supabase gen types typescript --linked --schema public > src/types/database.ts",
     "db:test:rls": "supabase db query --linked -f supabase/tests/rls_check.sql",
     "db:test:stock": "supabase db query --linked -f supabase/tests/stock_check.sql",
-    "db:test:orders": "supabase db query --linked -f supabase/tests/orders_check.sql"
+    "db:test:orders": "supabase db query --linked -f supabase/tests/orders_check.sql",
+    "db:test:dashboard": "supabase db query --linked -f supabase/tests/dashboard_check.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^6.0.2",
@@ -29,6 +30,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.91.0",
+    "recharts": "^3.10.1",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
