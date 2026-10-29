@@ -15,15 +15,16 @@ export type CurrentUser = {
   role: AppRole;
 };
 
-// Usuário logado e ativo, ou null. Memorizado por requisição com cache() do
+// Sessão e perfil do usuário. Memorizado por requisição com cache() do
 // React para não repetir a consulta em vários componentes da mesma página.
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+// `signedIn` sem `user` = tem sessão, mas o perfil está desativado.
+const getSession = cache(async (): Promise<{ signedIn: boolean; user: CurrentUser | null }> => {
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims;
   if (!claims?.sub) {
-    return null;
+    return { signedIn: false, user: null };
   }
 
   const { data: profile } = await supabase
@@ -33,22 +34,32 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     .maybeSingle();
 
   if (!profile?.active) {
-    return null;
+    return { signedIn: true, user: null };
   }
 
   return {
-    id: claims.sub,
-    email: claims.email ?? "",
-    fullName: profile.full_name,
-    role: profile.role,
+    signedIn: true,
+    user: {
+      id: claims.sub,
+      email: claims.email ?? "",
+      fullName: profile.full_name,
+      role: profile.role,
+    },
   };
 });
 
-// Para páginas da área logada: manda para o login quem não tem acesso.
+// Usuário logado e ativo, ou null.
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  return (await getSession()).user;
+}
+
+// Para páginas da área logada: manda para o login quem não tem acesso. Quem
+// foi desativado com a sessão aberta passa por /sair, que encerra a sessão;
+// senão o proxy o mandaria do login de volta para o dashboard.
 export async function requireUser() {
-  const user = await getCurrentUser();
+  const { signedIn, user } = await getSession();
   if (!user) {
-    redirect("/login");
+    redirect(signedIn ? "/sair?motivo=desativado" : "/login");
   }
   return user;
 }

@@ -17,7 +17,7 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 6 | Clientes: cadastro com validação de CPF/CNPJ, busca e edição | Concluída |
 | 7 | Pedidos: itens, total automático, confirmação com baixa de estoque e cancelamento | Concluída |
 | 8 | Dashboard: indicadores do mês e gráficos de vendas, mais vendidos e pedidos por status | Concluída |
-| 9 | Usuários | A fazer |
+| 9 | Usuários: tela do admin para mudar perfil e ativar ou desativar | Concluída |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -94,7 +94,7 @@ As regras ficam no banco (RLS e privilégios por coluna, em `supabase/migrations
 
 | Recurso | Administrador | Operador |
 | --- | --- | --- |
-| Perfis | Lê todos; altera nome, perfil e status | Lê o próprio |
+| Perfis | Lê todos; altera nome, perfil e status (o próprio, só o nome) | Lê o próprio |
 | Produtos e categorias | Cria, edita e inativa | Consulta |
 | Estoque | Entradas, saídas manuais e ajustes | Entradas |
 | Clientes | Cria, edita e inativa | Cria e edita |
@@ -200,6 +200,22 @@ A tela `/dashboard` mostra os indicadores do mês e três gráficos do período 
 
 Para conferir os números no banco, rode `npm run db:test:dashboard` (28 verificações, sem gravar nada). O script cria pedidos de teste, compara o resultado com o que era antes e desfaz tudo.
 
+## Usuários
+
+Tela `/usuarios`, só para o administrador (o operador não vê o menu e volta ao dashboard se abrir o endereço). Mostra nome, e-mail, status e último acesso de cada pessoa, com o perfil e o botão de desativar ou reativar na própria linha.
+
+- Novos usuários são criados ou convidados no painel do Supabase (Authentication → Users). O perfil nasce como operador e ativo.
+- O e-mail e o último acesso ficam em `auth.users`, fora do alcance da API; a função `list_users` (`20261029000007_users.sql`) os devolve só para o administrador.
+- O administrador não muda o próprio perfil nem desativa a si mesmo (a API responde 409 `self_change` e o banco também recusa). Assim sempre sobra ao menos um administrador ativo.
+- Desativar corta o acesso na hora: o banco deixa de responder a esse usuário, a API devolve 401 e, se ele estiver com o sistema aberto, a próxima página encerra a sessão e mostra o aviso no login.
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/users` | Lista com e-mail, perfil, status e último acesso | Admin |
+| `PATCH /api/users/{id}` | `{ fullName?, role?, active? }`. O próprio perfil ou status → 409 | Admin |
+
+Para conferir as regras no banco, rode `npm run db:test:users` (22 verificações, sem gravar nada).
+
 ## Scripts
 
 | Comando | O que faz |
@@ -215,4 +231,5 @@ Para conferir os números no banco, rode `npm run db:test:dashboard` (28 verific
 | `npm run db:test:stock` | Verifica as regras de saldo de estoque no projeto vinculado (sem gravar nada) |
 | `npm run db:test:orders` | Verifica as regras de pedidos no projeto vinculado (sem gravar nada) |
 | `npm run db:test:dashboard` | Confere os números do dashboard no projeto vinculado (sem gravar nada) |
+| `npm run db:test:users` | Verifica as regras de usuários no projeto vinculado (sem gravar nada) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |

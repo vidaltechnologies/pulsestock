@@ -322,6 +322,18 @@ export type Database = {
         Returns: Database["public"]["Enums"]["order_status"];
       };
       dashboard_summary: { Args: { p_days?: number }; Returns: Json };
+      list_users: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          active: boolean;
+          created_at: string;
+          email: string;
+          full_name: string;
+          id: string;
+          last_sign_in_at: string;
+          role: Database["public"]["Enums"]["app_role"];
+        }[];
+      };
       save_order: {
         Args: { p_customer_id: string; p_items: Json; p_notes?: string; p_order_id?: string };
         Returns: string;
