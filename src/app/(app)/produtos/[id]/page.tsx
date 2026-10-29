@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 
 import { ProductForm } from "@/components/products/product-form";
-import { ProductStatusButton } from "@/components/products/product-status-button";
+import { StatusToggleButton } from "@/components/status-toggle-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireRole } from "@/lib/auth";
@@ -57,7 +57,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
       </div>
       <ProductForm product={p} categories={categories.data} />
       <div className="max-w-2xl border-t pt-6">
-        <ProductStatusButton id={p.id} active={p.active} />
+        <StatusToggleButton endpoint={`/api/products/${p.id}`} active={p.active} noun="produto" />
       </div>
     </div>
   );

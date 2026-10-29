@@ -14,7 +14,8 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 3 | Perfis de acesso e políticas RLS | Concluída |
 | 4 | Produtos e categorias: API, listagem com busca e cadastro | Concluída |
 | 5 | Estoque: movimentações, saldo por gatilho e alerta de mínimo | Concluída |
-| 6–9 | Clientes, pedidos, dashboard, usuários | A fazer |
+| 6 | Clientes: cadastro com validação de CPF/CNPJ, busca e edição | Concluída |
+| 7–9 | Pedidos, dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -139,6 +140,20 @@ O saldo (`products.stock_quantity`) só muda por movimentações em `stock_movem
 | `POST /api/stock-movements` | `{ productId, type, quantity, reason? }`. Devolve a movimentação e o novo saldo. Saldo insuficiente → 409 `insufficient_stock` | Entrada: ambos · Saída e ajuste: admin |
 
 Para conferir as regras de saldo no banco, rode `npm run db:test:stock` (22 verificações, sem gravar nada).
+
+## Clientes
+
+Telas em `/clientes` (lista com busca por nome, e-mail ou CPF/CNPJ e filtro de status), `/clientes/novo` e `/clientes/{id}`. Admin e operador cadastram e editam; só o admin inativa ou reativa.
+
+- CPF e CNPJ são opcionais, mas quando informados precisam ter os dígitos verificadores corretos. Aceitam máscara e são gravados só com números (únicos no banco).
+- E-mail é gravado em minúsculas, e a UF é escolhida da lista dos 27 estados.
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/customers` | Lista. Filtros: `q`, `status` (`active`, `inactive`, `all`), `page`, `pageSize` | Ambos |
+| `POST /api/customers` | `{ name, document?, email?, phone?, city?, state? }`. Documento repetido → 409 | Ambos |
+| `GET /api/customers/{id}` | Detalhe | Ambos |
+| `PATCH /api/customers/{id}` | Edição parcial. `active` só para admin (403 para operador) | Ambos |
 
 ## Scripts
 
