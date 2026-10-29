@@ -50,6 +50,7 @@ As regras que não podem falhar ficam no PostgreSQL, não só na tela: permissõ
 - **Usuários:** o administrador muda o perfil e ativa ou desativa contas; quem é desativado perde o acesso na hora.
 - **API REST:** rotas para produtos, estoque, clientes, pedidos, dashboard e usuários, com validação em Zod e erros padronizados.
 - **Dados de demonstração:** 16 produtos, 10 clientes e cerca de 110 pedidos dos últimos 60 dias, criados pelas mesmas funções do app.
+- **Três idiomas:** português, inglês e espanhol, escolhidos pelas bandeiras no topo da tela. Textos, mensagens de erro, números e datas mudam juntos; na primeira visita vale o idioma do navegador.
 
 ## Telas
 

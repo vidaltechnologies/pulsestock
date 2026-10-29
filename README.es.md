@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Panel con los indicadores del mes y el gráfico de ventas por día" width="900">
+  <img src="docs/screenshots/es/dashboard.png" alt="Panel con los indicadores del mes y el gráfico de ventas por día" width="900">
 </p>
 
 ## Sobre el proyecto
@@ -50,20 +50,21 @@ Las reglas que no pueden fallar viven en PostgreSQL, no solo en la pantalla: per
 - **Usuarios:** el administrador cambia perfiles y activa o desactiva cuentas; quien es desactivado pierde el acceso al instante.
 - **API REST:** rutas para productos, inventario, clientes, pedidos, panel y usuarios, con validación en Zod y errores estandarizados.
 - **Datos de demostración:** 16 productos, 10 clientes y unos 110 pedidos de los últimos 60 días, creados con las mismas funciones de la aplicación.
+- **Tres idiomas:** portugués, inglés y español, elegidos con las banderas en la parte superior de la pantalla. Textos, mensajes de error, números y fechas cambian juntos; en la primera visita se usa el idioma del navegador.
 
 ## Pantallas
 
 | | |
 | --- | --- |
-| ![Lista de pedidos con estado](docs/screenshots/pedidos.png) | ![Pedido pendiente con sus acciones de estado](docs/screenshots/pedido.png) |
+| ![Lista de pedidos con estado](docs/screenshots/es/pedidos.png) | ![Pedido pendiente con sus acciones de estado](docs/screenshots/es/pedido.png) |
 | Pedidos: búsqueda por número o cliente y filtro de estado | Pedido: ítems, total, cliente y acciones de estado |
-| ![Inventario con alerta de inventario bajo e historial](docs/screenshots/estoque.png) | ![Lista de productos](docs/screenshots/produtos.png) |
+| ![Inventario con alerta de inventario bajo e historial](docs/screenshots/es/estoque.png) | ![Lista de productos](docs/screenshots/es/produtos.png) |
 | Inventario: movimientos, alerta de mínimo e historial | Productos: búsqueda, categoría y estado |
-| ![Administración de usuarios](docs/screenshots/usuarios.png) | ![Pantalla de inicio de sesión](docs/screenshots/login.png) |
+| ![Administración de usuarios](docs/screenshots/es/usuarios.png) | ![Pantalla de inicio de sesión](docs/screenshots/es/login.png) |
 | Usuarios: perfil y acceso, solo para el administrador | Inicio de sesión |
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-celular.png" alt="Panel en el móvil" width="320">
+  <img src="docs/screenshots/es/dashboard-celular.png" alt="Panel en el móvil" width="320">
   <br>
   <sub>Panel en el móvil</sub>
 </p>

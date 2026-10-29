@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Dashboard with the month's indicators and a daily sales chart" width="900">
+  <img src="docs/screenshots/en/dashboard.png" alt="Dashboard with the month's indicators and a daily sales chart" width="900">
 </p>
 
 ## About the project
@@ -50,20 +50,21 @@ The rules that must never fail live in PostgreSQL, not only in the UI: role-base
 - **Users:** the admin changes roles and activates or deactivates accounts; a deactivated user loses access immediately.
 - **REST API:** routes for products, inventory, customers, orders, dashboard and users, validated with Zod and with standard error responses.
 - **Demo data:** 16 products, 10 customers and about 110 orders from the last 60 days, created through the same functions the app uses.
+- **Three languages:** Portuguese, English and Spanish, picked with the flags at the top of the screen. Text, error messages, numbers and dates all change; on a first visit the browser language is used.
 
 ## Screens
 
 | | |
 | --- | --- |
-| ![Order list with status](docs/screenshots/pedidos.png) | ![Pending order with its status actions](docs/screenshots/pedido.png) |
+| ![Order list with status](docs/screenshots/en/pedidos.png) | ![Pending order with its status actions](docs/screenshots/en/pedido.png) |
 | Orders: search by number or customer and filter by status | Order: items, total, customer and status actions |
-| ![Inventory with low-stock alert and history](docs/screenshots/estoque.png) | ![Product list](docs/screenshots/produtos.png) |
+| ![Inventory with low-stock alert and history](docs/screenshots/en/estoque.png) | ![Product list](docs/screenshots/en/produtos.png) |
 | Inventory: movements, minimum-stock alert and history | Products: search, category and status |
-| ![User administration](docs/screenshots/usuarios.png) | ![Login screen](docs/screenshots/login.png) |
+| ![User administration](docs/screenshots/en/usuarios.png) | ![Login screen](docs/screenshots/en/login.png) |
 | Users: role and access, admin only | Login |
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-celular.png" alt="Dashboard on a phone" width="320">
+  <img src="docs/screenshots/en/dashboard-celular.png" alt="Dashboard on a phone" width="320">
   <br>
   <sub>Dashboard on a phone</sub>
 </p>
