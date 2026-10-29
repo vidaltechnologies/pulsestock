@@ -1,6 +1,10 @@
 # Pulse Stock
 
+[![CI](https://github.com/vidaltechnologies/pulsestock/actions/workflows/ci.yml/badge.svg)](https://github.com/vidaltechnologies/pulsestock/actions/workflows/ci.yml)
+
 Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
+
+![Dashboard com indicadores do mês e gráfico de vendas por dia](docs/screenshots/dashboard.png)
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Supabase (PostgreSQL + Auth) · Zod · Recharts
 
@@ -18,7 +22,18 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 7 | Pedidos: itens, total automático, confirmação com baixa de estoque e cancelamento | Concluída |
 | 8 | Dashboard: indicadores do mês e gráficos de vendas, mais vendidos e pedidos por status | Concluída |
 | 9 | Usuários: tela do admin para mudar perfil e ativar ou desativar | Concluída |
-| 10 | Seed de demonstração, CI e deploy | A fazer |
+| 10 | Dados de demonstração, CI, revisão de acessibilidade e deploy | Concluída |
+
+## Telas
+
+| | |
+| --- | --- |
+| ![Lista de pedidos com status](docs/screenshots/pedidos.png) | ![Detalhe de um pedido pendente com as ações de status](docs/screenshots/pedido.png) |
+| Pedidos: busca por número ou cliente e filtro de status | Pedido: itens, total, cliente e ações de status |
+| ![Estoque com alerta de estoque baixo e histórico](docs/screenshots/estoque.png) | ![Lista de produtos](docs/screenshots/produtos.png) |
+| Estoque: movimentação, alerta de mínimo e histórico | Produtos: busca, categoria e status |
+| ![Administração de usuários](docs/screenshots/usuarios.png) | ![Dashboard no celular](docs/screenshots/dashboard-celular.png) |
+| Usuários: perfil e acesso, só para o admin | Dashboard no celular |
 
 ## Requisitos
 
@@ -41,7 +56,7 @@ As migrações ficam em `supabase/migrations/`. A Supabase CLI já vem como depe
 
 ```bash
 npm run db:start   # sobe o Supabase local
-npm run db:reset   # recria o banco aplicando as migrações
+npm run db:reset   # recria o banco aplicando as migrações e os dados de demonstração
 ```
 
 **Projeto na nuvem:**
@@ -53,6 +68,14 @@ npx supabase db push
 ```
 
 `login` e `link` pedem o token de acesso e a senha do banco no seu terminal. Eles não devem ser salvos no repositório.
+
+### Dados de demonstração
+
+`supabase/seed.sql` cria 4 categorias, 16 produtos, 10 clientes e cerca de 110 pedidos espalhados pelos últimos 60 dias (a maioria entregue, alguns enviados, confirmados, pendentes e cancelados), além de 3 produtos com estoque baixo. Os pedidos passam pelas mesmas funções do app, então saldos, totais e histórico ficam coerentes.
+
+- Não cria usuários nem senhas. Pedidos e movimentações ficam em nome do primeiro administrador ativo; sem administrador, só catálogo e clientes são criados.
+- Roda uma vez só: se já existirem produtos com SKU `PS-`, não faz nada.
+- No banco local roda junto com `npm run db:reset`. No projeto na nuvem: `npm run db:seed`.
 
 ### Modelo de dados
 
@@ -216,6 +239,30 @@ Tela `/usuarios`, só para o administrador (o operador não vê o menu e volta a
 
 Para conferir as regras no banco, rode `npm run db:test:users` (22 verificações, sem gravar nada).
 
+## Integração contínua
+
+O workflow `.github/workflows/ci.yml` roda em cada pull request e em cada push na `main`:
+
+1. **App:** `npm ci`, lint, typecheck, testes unitários e build.
+2. **Banco:** sobe o Postgres local do Supabase no runner, aplica todas as migrações, cria um administrador de teste, carrega os dados de demonstração e roda as cinco verificações (`supabase/tests/*_check.sql`). Qualquer verificação que falhar derruba o job.
+
+## Deploy na Vercel
+
+O app roda na Vercel sem configuração extra (Next.js é detectado sozinho). Só duas variáveis são necessárias, e as duas são públicas: a URL do projeto e a chave publicável. A chave secreta do Supabase não é usada pelo app.
+
+1. Em [vercel.com/new](https://vercel.com/new), importe o repositório `vidaltechnologies/pulsestock`.
+2. Em **Environment Variables**, adicione:
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://qhkemlxytksotndoxtak.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = a chave publicável (Supabase → Project Settings → API Keys)
+3. Clique em **Deploy**.
+4. No Supabase, em **Authentication → URL Configuration**, troque o **Site URL** pelo endereço da Vercel (por exemplo `https://pulsestock.vercel.app`). Os e-mails de convite e de troca de senha passam a apontar para o site publicado.
+
+Cada push na `main` gera um novo deploy, e cada pull request ganha um endereço de prévia.
+
+## Acessibilidade
+
+As telas principais (login, dashboard, produtos, estoque, clientes, pedidos e usuários) passam sem violações na verificação automática do [axe-core](https://github.com/dequelabs/axe-core) com as regras WCAG 2.1 AA. Para isso o azul dos botões e textos (`--primary`) é um tom um pouco mais escuro do azul da marca, com contraste acima de 4,5:1. Os gráficos têm tooltip e a opção "Ver dados em tabela", e todas as telas funcionam no celular sem rolagem horizontal.
+
 ## Scripts
 
 | Comando | O que faz |
@@ -232,4 +279,5 @@ Para conferir as regras no banco, rode `npm run db:test:users` (22 verificaçõe
 | `npm run db:test:orders` | Verifica as regras de pedidos no projeto vinculado (sem gravar nada) |
 | `npm run db:test:dashboard` | Confere os números do dashboard no projeto vinculado (sem gravar nada) |
 | `npm run db:test:users` | Verifica as regras de usuários no projeto vinculado (sem gravar nada) |
+| `npm run db:seed` | Carrega os dados de demonstração no projeto vinculado (uma vez só) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    env:
+      # Valores de exemplo só para o build; nenhuma chamada é feita ao Supabase.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  database:
+    name: Migrações, dados de demonstração e regras do banco
+    runs-on: ubuntu-latest
+    env:
+      # Banco local que o Supabase CLI sobe no runner (senha padrão do CLI).
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Sobe o Postgres local do Supabase com as migrações
+        run: |
+          npx supabase db start
+          npx supabase db reset --local --no-seed
+      # psql com ON_ERROR_STOP: qualquer verificação que falhar derruba o job.
+      - name: Cria um administrador de teste e carrega os dados de demonstração
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "insert into auth.users (id, email, aud, role, raw_user_meta_data) values ('c1000000-0000-4000-8000-000000000001', 'admin@ci.local', 'authenticated', 'authenticated', '{\"full_name\":\"Admin CI\"}')"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "update public.profiles set role = 'admin' where id = 'c1000000-0000-4000-8000-000000000001'"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "select status, count(*) from public.orders group by status order by status"
+      - name: Verificações do banco
+        run: |
+          for check in rls stock orders dashboard users; do
+            echo "::group::$check"
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -f "supabase/tests/${check}_check.sql"
+            echo "::endgroup::"
+          done
