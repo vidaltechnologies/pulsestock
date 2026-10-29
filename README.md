@@ -16,7 +16,8 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 5 | Estoque: movimentações, saldo por gatilho e alerta de mínimo | Concluída |
 | 6 | Clientes: cadastro com validação de CPF/CNPJ, busca e edição | Concluída |
 | 7 | Pedidos: itens, total automático, confirmação com baixa de estoque e cancelamento | Concluída |
-| 8–9 | Dashboard, usuários | A fazer |
+| 8 | Dashboard: indicadores do mês e gráficos de vendas, mais vendidos e pedidos por status | Concluída |
+| 9 | Usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -184,6 +185,21 @@ O pedido é gravado pela função `save_order` e o status muda só por `change_o
 
 Para conferir as regras no banco, rode `npm run db:test:orders` (37 verificações, sem gravar nada).
 
+## Dashboard
+
+A tela `/dashboard` mostra os indicadores do mês e três gráficos do período escolhido (7, 30 ou 90 dias, pela URL `?periodo=`). Os números são calculados no banco pela função `dashboard_summary` (`20261029000006_dashboard.sql`), numa consulta só.
+
+- Venda é um pedido confirmado, enviado ou entregue, contado pela data de confirmação. Pendentes e cancelados ficam fora dos valores.
+- Os dias são agrupados no fuso de São Paulo: uma venda confirmada às 23h é do dia dela, mesmo que já seja o dia seguinte em UTC.
+- Indicadores: vendas do mês, pedidos vendidos no mês, ticket médio (vendas ÷ pedidos) e pedidos pendentes. Gráficos: vendas por dia, os 5 produtos mais vendidos (por valor) e pedidos criados no período por status. Abaixo, os produtos com estoque baixo.
+- Só o administrador vê a margem estimada do mês e o valor do estoque a preço de custo. A margem usa o custo atual do produto, porque o item do pedido não guarda o custo da época. Para o operador, a função devolve esses campos como `null`.
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/dashboard` | Indicadores e séries. Filtro: `days` (7, 30 ou 90; padrão 30) | Ambos |
+
+Para conferir os números no banco, rode `npm run db:test:dashboard` (28 verificações, sem gravar nada). O script cria pedidos de teste, compara o resultado com o que era antes e desfaz tudo.
+
 ## Scripts
 
 | Comando | O que faz |
@@ -198,4 +214,5 @@ Para conferir as regras no banco, rode `npm run db:test:orders` (37 verificaçõ
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |
 | `npm run db:test:stock` | Verifica as regras de saldo de estoque no projeto vinculado (sem gravar nada) |
 | `npm run db:test:orders` | Verifica as regras de pedidos no projeto vinculado (sem gravar nada) |
+| `npm run db:test:dashboard` | Confere os números do dashboard no projeto vinculado (sem gravar nada) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |
