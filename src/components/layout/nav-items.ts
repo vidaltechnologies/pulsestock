@@ -25,7 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/produtos", label: "Produtos", icon: Package, available: true },
   { href: "/estoque", label: "Estoque", icon: Boxes, available: true },
   { href: "/clientes", label: "Clientes", icon: Users, available: true },
-  { href: "/pedidos", label: "Pedidos", icon: ClipboardList, available: false },
+  { href: "/pedidos", label: "Pedidos", icon: ClipboardList, available: true },
   { href: "/usuarios", label: "Usuários", icon: ShieldCheck, available: false, role: "admin" },
 ];
 

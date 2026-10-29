@@ -15,7 +15,8 @@ Mini ERP de estoque e pedidos de venda, feito como projeto de portfólio.
 | 4 | Produtos e categorias: API, listagem com busca e cadastro | Concluída |
 | 5 | Estoque: movimentações, saldo por gatilho e alerta de mínimo | Concluída |
 | 6 | Clientes: cadastro com validação de CPF/CNPJ, busca e edição | Concluída |
-| 7–9 | Pedidos, dashboard, usuários | A fazer |
+| 7 | Pedidos: itens, total automático, confirmação com baixa de estoque e cancelamento | Concluída |
+| 8–9 | Dashboard, usuários | A fazer |
 | 10 | Seed de demonstração, CI e deploy | A fazer |
 
 ## Requisitos
@@ -96,7 +97,7 @@ As regras ficam no banco (RLS e privilégios por coluna, em `supabase/migrations
 | Produtos e categorias | Cria, edita e inativa | Consulta |
 | Estoque | Entradas, saídas manuais e ajustes | Entradas |
 | Clientes | Cria, edita e inativa | Cria e edita |
-| Pedidos e itens | Cria e edita enquanto pendente | Cria e edita enquanto pendente |
+| Pedidos e itens | Cria, edita enquanto pendente, muda status e cancela | Cria, edita enquanto pendente e muda status (sem cancelar) |
 
 - Sem login (`anon`) e com perfil inativo, nenhuma tabela é acessível.
 - Nada é excluído fisicamente, exceto itens de pedido pendente. Registros são inativados.
@@ -155,6 +156,34 @@ Telas em `/clientes` (lista com busca por nome, e-mail ou CPF/CNPJ e filtro de s
 | `GET /api/customers/{id}` | Detalhe | Ambos |
 | `PATCH /api/customers/{id}` | Edição parcial. `active` só para admin (403 para operador) | Ambos |
 
+## Pedidos
+
+Telas em `/pedidos` (lista com busca por número ou nome do cliente e filtro de status), `/pedidos/novo`, `/pedidos/{id}` (detalhe com as ações de status) e `/pedidos/{id}/editar` (só enquanto pendente).
+
+O pedido é gravado pela função `save_order` e o status muda só por `change_order_status`, ambas em `20261029000005_orders.sql`. Cada uma roda numa transação: ou tudo é gravado, ou nada.
+
+- O preço de cada item é o preço de venda do produto no momento em que ele entra no pedido. O total é recalculado por gatilho e não pode ser gravado pela API.
+- O mesmo produto repetido vira um item só, com as quantidades somadas. Produto inativo não entra em pedido.
+- O estoque só baixa quando o pedido é confirmado. A confirmação confere o saldo de todos os itens antes de baixar qualquer um: se faltar saldo de um, nada é baixado e a resposta diz qual produto e quanto há. Cada item gera uma saída em `stock_movements` ligada ao pedido.
+- Cancelar um pedido confirmado devolve o estoque com entradas ligadas ao pedido.
+
+| De | Para | Quem |
+| --- | --- | --- |
+| Pendente | Confirmado | Ambos |
+| Confirmado | Enviado | Ambos |
+| Enviado | Entregue | Ambos |
+| Pendente ou confirmado | Cancelado | Admin |
+
+| Rota | Uso | Perfil |
+| --- | --- | --- |
+| `GET /api/orders` | Lista. Filtros: `q` (número ou cliente), `status`, `customerId`, `page`, `pageSize` | Ambos |
+| `POST /api/orders` | `{ customerId, items: [{ productId, quantity }], notes? }`. Devolve o pedido (201) | Ambos |
+| `GET /api/orders/{id}` | Detalhe com cliente e itens | Ambos |
+| `PATCH /api/orders/{id}` | Mesmo corpo do POST; substitui cliente, itens e observações. Pedido não pendente → 409 `not_editable` | Ambos |
+| `POST /api/orders/{id}/status` | `{ status }` (`confirmed`, `shipped`, `delivered`, `cancelled`). Erros 409: `insufficient_stock`, `inactive_product`, `invalid_transition` | Ambos · Cancelar: admin |
+
+Para conferir as regras no banco, rode `npm run db:test:orders` (37 verificações, sem gravar nada).
+
 ## Scripts
 
 | Comando | O que faz |
@@ -168,4 +197,5 @@ Telas em `/clientes` (lista com busca por nome, e-mail ou CPF/CNPJ e filtro de s
 | `npm run db:reset` | Recria o banco local com as migrações |
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |
 | `npm run db:test:stock` | Verifica as regras de saldo de estoque no projeto vinculado (sem gravar nada) |
+| `npm run db:test:orders` | Verifica as regras de pedidos no projeto vinculado (sem gravar nada) |
 | `npm run db:types` | Gera os tipos TypeScript a partir do projeto Supabase vinculado |

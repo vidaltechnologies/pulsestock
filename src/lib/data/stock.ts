@@ -1,6 +1,7 @@
 import "server-only";
 
 import { toDataError, type DataResult } from "@/lib/data/products";
+import { getDisplayNames } from "@/lib/data/users";
 import { createClient } from "@/lib/supabase/server";
 import type {
   StockMovementInput,
@@ -36,16 +37,8 @@ type MovementRow = {
   product: { id: string; sku: string; name: string; unit: string } | null;
 };
 
-// O operador só lê o próprio perfil, então os nomes vêm de uma função do
-// banco que devolve apenas id e nome.
 async function withNames(rows: MovementRow[]): Promise<StockMovement[]> {
-  const ids = [...new Set(rows.map((r) => r.created_by))];
-  const names = new Map<string, string>();
-  if (ids.length > 0) {
-    const supabase = await createClient();
-    const { data } = await supabase.rpc("user_display_names", { user_ids: ids });
-    data?.forEach((u) => names.set(u.id, u.full_name));
-  }
+  const names = await getDisplayNames(rows.map((r) => r.created_by));
 
   return rows.map((r) => ({
     id: r.id,

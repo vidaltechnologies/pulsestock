@@ -317,6 +317,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      change_order_status: {
+        Args: { p_order_id: string; p_status: Database["public"]["Enums"]["order_status"] };
+        Returns: Database["public"]["Enums"]["order_status"];
+      };
+      save_order: {
+        Args: { p_customer_id: string; p_items: Json; p_notes?: string; p_order_id?: string };
+        Returns: string;
+      };
       user_display_names: {
         Args: { user_ids: string[] };
         Returns: {

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { toDataError, type DataError, type DataResult } from "@/lib/data/products";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
@@ -144,3 +146,21 @@ export async function updateCustomer(
   }
   return data ? { data: toCustomer(data) } : { error: NOT_FOUND };
 }
+
+export type CustomerOption = Pick<Customer, "id" | "name" | "document">;
+
+// Clientes ativos para escolher no pedido.
+export const listCustomerOptions = cache(async (): Promise<DataResult<CustomerOption[]>> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, name, document")
+    .eq("active", true)
+    .order("name")
+    .limit(1000);
+
+  if (error) {
+    return { error: toDataError(error, "") };
+  }
+  return { data };
+});
