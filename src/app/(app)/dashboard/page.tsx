@@ -15,21 +15,15 @@ import {
 } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth";
 import { getDashboard, type Dashboard } from "@/lib/data/dashboard";
-import { listLowStockProducts } from "@/lib/data/products";
-import { formatCurrency, formatInteger } from "@/lib/format";
+import { listLowStockProducts, type DataResult, type Product } from "@/lib/data/products";
+import { getI18n } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { DASHBOARD_PERIODS, dashboardQuerySchema } from "@/lib/validations/dashboard";
-import { ORDER_STATUSES, ORDER_STATUS_LABELS } from "@/lib/validations/order";
+import { ORDER_STATUSES } from "@/lib/validations/order";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-};
-
-const monthName = new Intl.DateTimeFormat("pt-BR", { month: "long", timeZone: "UTC" });
-
-// "2026-10-29" → "29/10/2026"
-function formatDay(day: string) {
-  return day.split("-").reverse().join("/");
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.dashboard };
 }
 
 export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
@@ -52,18 +46,16 @@ async function periodFrom(searchParams: PageProps<"/dashboard">["searchParams"])
 }
 
 async function Header({ searchParams }: { searchParams: PageProps<"/dashboard">["searchParams"] }) {
-  const [user, days] = await Promise.all([requireUser(), periodFrom(searchParams)]);
+  const [user, days, { t }] = await Promise.all([requireUser(), periodFrom(searchParams), getI18n()]);
   const firstName = (user.fullName || user.email).split(" ")[0];
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Olá, {firstName}</h1>
-        <p className="text-sm text-muted-foreground">
-          Vendas são pedidos confirmados, enviados ou entregues, pela data de confirmação.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.dashboard.greeting(firstName)}</h1>
+        <p className="text-sm text-muted-foreground">{t.dashboard.salesNote}</p>
       </div>
-      <nav aria-label="Período dos gráficos" className="flex w-fit rounded-lg border p-1">
+      <nav aria-label={t.dashboard.periodNav} className="flex w-fit rounded-lg border p-1">
         {DASHBOARD_PERIODS.map((period) => (
           <Link
             key={period}
@@ -74,7 +66,7 @@ async function Header({ searchParams }: { searchParams: PageProps<"/dashboard">[
               period === days && "bg-muted text-foreground",
             )}
           >
-            {period} dias
+            {t.dashboard.days(period)}
           </Link>
         ))}
       </nav>
@@ -88,7 +80,11 @@ async function DashboardContent({
   searchParams: PageProps<"/dashboard">["searchParams"];
 }) {
   const days = await periodFrom(searchParams);
-  const [{ data, error }, user] = await Promise.all([getDashboard(days), requireUser()]);
+  const [{ data, error }, user, { t, f }] = await Promise.all([
+    getDashboard(days),
+    requireUser(),
+    getI18n(),
+  ]);
 
   if (error) {
     return (
@@ -96,45 +92,45 @@ async function DashboardContent({
         role="alert"
         className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
       >
-        Não foi possível carregar os indicadores. Tente de novo.
+        {t.dashboard.loadError}
       </p>
     );
   }
 
-  const month = monthName.format(new Date(`${data.monthStart}T00:00:00Z`));
-  const periodLabel = `${formatDay(data.periodStart)} a ${formatDay(data.today)}`;
+  const month = f.month(data.monthStart);
+  const periodLabel = t.dashboard.period(f.day(data.periodStart), f.day(data.today));
   // Margem e estoque a custo: só o admin recebe os valores do banco.
   const showCost = user.role === "admin" && data.monthMargin !== null && data.stockValue !== null;
 
   return (
     <>
       <section
-        aria-label="Indicadores do mês"
+        aria-label={t.dashboard.monthIndicators}
         className={cn(
           "grid grid-cols-2 gap-3 sm:gap-4",
           showCost ? "xl:grid-cols-3" : "xl:grid-cols-4",
         )}
       >
-        <StatTile label={`Vendas em ${month}`} value={formatCurrency(data.monthSales)} hero />
-        <StatTile label="Pedidos vendidos no mês" value={formatInteger(data.monthOrders)} />
-        <StatTile label="Ticket médio no mês" value={formatCurrency(data.averageTicket)} />
+        <StatTile label={t.dashboard.monthSales(month)} value={f.currency(data.monthSales)} hero />
+        <StatTile label={t.dashboard.monthOrders} value={f.integer(data.monthOrders)} />
+        <StatTile label={t.dashboard.averageTicket} value={f.currency(data.averageTicket)} />
         <StatTile
-          label="Pedidos pendentes"
-          value={formatInteger(data.pendingOrders)}
+          label={t.dashboard.pendingOrders}
+          value={f.integer(data.pendingOrders)}
           href="/pedidos?status=pendente"
-          linkLabel="Ver pedidos"
+          linkLabel={t.dashboard.viewOrders}
         />
         {showCost && (
           <>
             <StatTile
-              label="Margem estimada no mês"
-              value={formatCurrency(data.monthMargin ?? 0)}
-              note="Pelo preço de custo atual dos produtos"
+              label={t.dashboard.monthMargin}
+              value={f.currency(data.monthMargin ?? 0)}
+              note={t.dashboard.marginNote}
             />
             <StatTile
-              label="Estoque a preço de custo"
-              value={formatCurrency(data.stockValue ?? 0)}
-              note="Produtos ativos"
+              label={t.dashboard.stockValue}
+              value={f.currency(data.stockValue ?? 0)}
+              note={t.dashboard.stockValueNote}
             />
           </>
         )}
@@ -142,14 +138,14 @@ async function DashboardContent({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Vendas por dia</CardTitle>
+          <CardTitle className="text-base">{t.dashboard.salesByDay}</CardTitle>
           <CardDescription>{periodLabel}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {data.salesByDay.some((d) => d.total > 0) ? (
             <SalesByDayChart data={data.salesByDay} />
           ) : (
-            <EmptyChart>Nenhuma venda no período.</EmptyChart>
+            <EmptyChart>{t.dashboard.noSales}</EmptyChart>
           )}
           <SalesTable data={data} />
         </CardContent>
@@ -158,8 +154,8 @@ async function DashboardContent({
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Mais vendidos</CardTitle>
-            <CardDescription>Valor vendido por produto, {periodLabel}</CardDescription>
+            <CardTitle className="text-base">{t.dashboard.topProducts}</CardTitle>
+            <CardDescription>{t.dashboard.topProductsDescription(periodLabel)}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.topProducts.length > 0 ? (
@@ -168,31 +164,31 @@ async function DashboardContent({
                 data={data.topProducts.map((p) => ({
                   label: p.name,
                   value: p.total,
-                  detail: `${formatInteger(p.quantity)} ${p.unit} · ${p.sku}`,
+                  detail: `${f.integer(p.quantity)} ${p.unit} · ${p.sku}`,
                 }))}
               />
             ) : (
-              <EmptyChart>Nenhum produto vendido no período.</EmptyChart>
+              <EmptyChart>{t.dashboard.noProductsSold}</EmptyChart>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Pedidos por status</CardTitle>
-            <CardDescription>Pedidos criados de {periodLabel}</CardDescription>
+            <CardTitle className="text-base">{t.dashboard.ordersByStatus}</CardTitle>
+            <CardDescription>{t.dashboard.ordersByStatusDescription(periodLabel)}</CardDescription>
           </CardHeader>
           <CardContent>
             {Object.keys(data.ordersByStatus).length > 0 ? (
               <HorizontalBarChart
                 format="integer"
                 data={ORDER_STATUSES.map((status) => ({
-                  label: ORDER_STATUS_LABELS[status],
+                  label: t.orders.statuses[status],
                   value: data.ordersByStatus[status] ?? 0,
                 }))}
               />
             ) : (
-              <EmptyChart>Nenhum pedido criado no período.</EmptyChart>
+              <EmptyChart>{t.dashboard.noOrders}</EmptyChart>
             )}
           </CardContent>
         </Card>
@@ -252,30 +248,31 @@ function EmptyChart({ children }: { children: React.ReactNode }) {
 }
 
 // Os mesmos números do gráfico em tabela, para leitor de tela e conferência.
-function SalesTable({ data }: { data: Dashboard }) {
+async function SalesTable({ data }: { data: Dashboard }) {
+  const { t, f } = await getI18n();
   const days = data.salesByDay.filter((d) => d.orders > 0);
   return (
     <details className="text-sm">
       <summary className="w-fit cursor-pointer text-muted-foreground hover:text-foreground">
-        Ver dados em tabela
+        {t.dashboard.viewTable}
       </summary>
       {days.length === 0 ? (
-        <p className="mt-2 text-muted-foreground">Nenhuma venda no período.</p>
+        <p className="mt-2 text-muted-foreground">{t.dashboard.noSales}</p>
       ) : (
         <Table className="mt-2">
           <TableHeader>
             <TableRow>
-              <TableHead>Dia</TableHead>
-              <TableHead className="text-right">Pedidos</TableHead>
-              <TableHead className="text-right">Vendas</TableHead>
+              <TableHead>{t.dashboard.day}</TableHead>
+              <TableHead className="text-right">{t.dashboard.ordersColumn}</TableHead>
+              <TableHead className="text-right">{t.dashboard.salesColumn}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {days.map((d) => (
               <TableRow key={d.day}>
-                <TableCell>{formatDay(d.day)}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatInteger(d.orders)}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatCurrency(d.total)}</TableCell>
+                <TableCell>{f.day(d.day)}</TableCell>
+                <TableCell className="text-right tabular-nums">{f.integer(d.orders)}</TableCell>
+                <TableCell className="text-right tabular-nums">{f.currency(d.total)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -286,7 +283,10 @@ function SalesTable({ data }: { data: Dashboard }) {
 }
 
 async function LowStockList({ count }: { count: number }) {
-  const { data: products, error } = count > 0 ? await listLowStockProducts() : { data: [] };
+  const [{ data: products, error }, { t, f }] = await Promise.all([
+    count > 0 ? listLowStockProducts() : ({ data: [] } as DataResult<Product[]>),
+    getI18n(),
+  ]);
   if (error) {
     return null;
   }
@@ -294,19 +294,19 @@ async function LowStockList({ count }: { count: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Estoque baixo: {formatInteger(count)}</CardTitle>
-        <CardDescription>Produtos ativos no estoque mínimo ou abaixo dele</CardDescription>
+        <CardTitle className="text-base">{t.dashboard.lowStock(f.integer(count))}</CardTitle>
+        <CardDescription>{t.dashboard.lowStockDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         {products.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum produto abaixo do mínimo.</p>
+          <p className="text-sm text-muted-foreground">{t.dashboard.noLowStock}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead className="text-right">Mínimo</TableHead>
+                <TableHead>{t.common.product}</TableHead>
+                <TableHead className="text-right">{t.dashboard.balance}</TableHead>
+                <TableHead className="text-right">{t.dashboard.minimum}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -317,10 +317,10 @@ async function LowStockList({ count }: { count: number }) {
                     <span className="block font-mono text-xs text-muted-foreground">{p.sku}</span>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {formatInteger(p.stockQuantity)} {p.unit}
+                    {f.integer(p.stockQuantity)} {p.unit}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {formatInteger(p.minStock)}
+                    {f.integer(p.minStock)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -332,7 +332,7 @@ async function LowStockList({ count }: { count: number }) {
             href="/estoque"
             className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
           >
-            Ver todos os {formatInteger(products.length)} produtos
+            {t.dashboard.viewAllProducts(f.integer(products.length))}
           </Link>
         )}
       </CardContent>

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getDictionary } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 
 import type { AppRole } from "@/lib/auth";
@@ -12,15 +14,18 @@ export function NavList({
   orientation,
   role,
   pathname,
+  locale,
 }: {
   orientation: "vertical" | "horizontal";
   role: AppRole | null;
   pathname: string | null;
+  locale: Locale;
 }) {
   const vertical = orientation === "vertical";
+  const t = getDictionary(locale).nav;
 
   return (
-    <nav aria-label="Menu principal">
+    <nav aria-label={t.menu}>
       <ul className={cn("flex gap-1", vertical ? "flex-col" : "overflow-x-auto")}>
         {navItemsFor(role).map(({ href, label, icon: Icon, available }) => {
           const active = pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
@@ -40,14 +45,14 @@ export function NavList({
                   className={cn(itemClass, "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}
                 >
                   <Icon className="size-4" aria-hidden />
-                  {label}
+                  {t[label]}
                 </Link>
               ) : (
                 <span className={cn(itemClass, "cursor-not-allowed opacity-60")} aria-disabled>
                   <Icon className="size-4" aria-hidden />
-                  {label}
+                  {t[label]}
                   {vertical && (
-                    <span className="ml-auto text-xs font-normal">em breve</span>
+                    <span className="ml-auto text-xs font-normal">{t.soon}</span>
                   )}
                 </span>
               )}

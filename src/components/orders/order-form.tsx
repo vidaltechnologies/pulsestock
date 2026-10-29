@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,6 @@ import type { ApiErrorBody } from "@/lib/api";
 import type { CustomerOption } from "@/lib/data/customers";
 import type { Order } from "@/lib/data/orders";
 import type { ProductOption } from "@/lib/data/products";
-import { formatCurrency, formatInteger } from "@/lib/format";
 import { formatDocument } from "@/lib/validations/customer";
 import { orderSchema, type OrderFormValues, type OrderInput } from "@/lib/validations/order";
 
@@ -41,6 +41,7 @@ export function OrderForm({
   products: ProductOption[];
 }) {
   const router = useRouter();
+  const { t, f, tm } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const [newProductId, setNewProductId] = useState("");
   const [newQuantity, setNewQuantity] = useState("1");
@@ -99,7 +100,7 @@ export function OrderForm({
         body: JSON.stringify(values),
       });
     } catch {
-      setFormError("Não foi possível conectar. Verifique sua internet.");
+      setFormError(t.common.connectionError);
       return;
     }
 
@@ -108,7 +109,7 @@ export function OrderForm({
       | null;
 
     if (!response.ok || !body?.data) {
-      setFormError(body?.error?.message ?? "Não foi possível salvar o pedido. Tente de novo.");
+      setFormError(body?.error?.message ?? t.orders.form.error);
       return;
     }
 
@@ -122,10 +123,14 @@ export function OrderForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex max-w-4xl flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="customerId">Cliente</Label>
+        <Label htmlFor="customerId">{t.common.customer}</Label>
         {customers.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nenhum cliente ativo. <Link href="/clientes/novo" className="text-primary hover:underline">Cadastre um cliente</Link> primeiro.
+            {t.orders.form.noCustomers}{" "}
+            <Link href="/clientes/novo" className="text-primary hover:underline">
+              {t.orders.form.createCustomer}
+            </Link>{" "}
+            {t.orders.form.first}
           </p>
         ) : (
           <NativeSelect
@@ -135,7 +140,7 @@ export function OrderForm({
             aria-invalid={!!errors.customerId}
             {...register("customerId")}
           >
-            <NativeSelectOption value="">Escolha um cliente</NativeSelectOption>
+            <NativeSelectOption value="">{t.orders.form.chooseCustomer}</NativeSelectOption>
             {customers.map((c) => (
               <NativeSelectOption key={c.id} value={c.id}>
                 {c.name}
@@ -144,15 +149,15 @@ export function OrderForm({
             ))}
           </NativeSelect>
         )}
-        {errors.customerId && <p className="text-sm text-destructive">{errors.customerId.message}</p>}
+        {errors.customerId && <p className="text-sm text-destructive">{tm(errors.customerId.message)}</p>}
       </div>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Itens</legend>
+        <legend className="mb-2 text-sm font-medium">{t.orders.form.items}</legend>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-1 flex-col gap-1.5">
             <Label htmlFor="new-product" className="text-muted-foreground">
-              Produto
+              {t.common.product}
             </Label>
             <NativeSelect
               id="new-product"
@@ -161,17 +166,17 @@ export function OrderForm({
               value={newProductId}
               onChange={(e) => setNewProductId(e.target.value)}
             >
-              <NativeSelectOption value="">Escolha um produto</NativeSelectOption>
+              <NativeSelectOption value="">{t.common.chooseProduct}</NativeSelectOption>
               {products.map((p) => (
                 <NativeSelectOption key={p.id} value={p.id}>
-                  {p.sku} · {p.name} · {formatCurrency(p.salePrice)} · saldo {formatInteger(p.stockQuantity)}
+                  {t.orders.form.productOption(p.sku, p.name, f.currency(p.salePrice), f.integer(p.stockQuantity))}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
           </div>
           <div className="flex w-24 flex-col gap-1.5">
             <Label htmlFor="new-quantity" className="text-muted-foreground">
-              Qtd.
+              {t.common.qty}
             </Label>
             <Input
               id="new-quantity"
@@ -188,7 +193,7 @@ export function OrderForm({
           </div>
           <Button type="button" variant="secondary" onClick={addItem} disabled={!newProductId}>
             <Plus aria-hidden />
-            Adicionar
+            {t.common.add}
           </Button>
         </div>
 
@@ -196,12 +201,12 @@ export function OrderForm({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead className="w-28">Qtd.</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Preço</TableHead>
-                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead>{t.common.product}</TableHead>
+                <TableHead className="w-28">{t.common.qty}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{t.common.price}</TableHead>
+                <TableHead className="text-right">{t.common.subtotal}</TableHead>
                 <TableHead className="w-12">
-                  <span className="sr-only">Remover</span>
+                  <span className="sr-only">{t.orders.form.remove}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -209,7 +214,7 @@ export function OrderForm({
               {fields.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                    Nenhum item adicionado.
+                    {t.orders.form.noItems}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -219,7 +224,7 @@ export function OrderForm({
                   const fallback = missingProduct(field.productId);
                   const qty = Number(item?.quantity);
                   const price = product?.salePrice ?? 0;
-                  const error = errors.items?.[index]?.quantity?.message;
+                  const error = tm(errors.items?.[index]?.quantity?.message);
                   return (
                     <TableRow key={field.id}>
                       <TableCell>
@@ -228,17 +233,17 @@ export function OrderForm({
                           {product?.sku ?? fallback?.sku}
                         </span>
                         {!product && (
-                          <span className="block text-xs text-destructive">Produto inativo: remova do pedido.</span>
+                          <span className="block text-xs text-destructive">{t.orders.form.inactiveProduct}</span>
                         )}
                         {product && qty > product.stockQuantity && (
                           <span className="block text-xs text-amber-700 dark:text-amber-300">
-                            Saldo atual: {formatInteger(product.stockQuantity)} {product.unit}
+                            {t.common.currentStock(f.integer(product.stockQuantity), product.unit)}
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
                         <Input
-                          aria-label={`Quantidade de ${product?.name ?? fallback?.name ?? "produto"}`}
+                          aria-label={t.orders.form.quantityOf(product?.name ?? fallback?.name ?? t.products.noun)}
                           inputMode="numeric"
                           aria-invalid={!!error}
                           {...register(`items.${index}.quantity`)}
@@ -246,10 +251,10 @@ export function OrderForm({
                         {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                        {formatCurrency(price)}
+                        {f.currency(price)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatCurrency(Number.isFinite(qty) ? qty * price : 0)}
+                        {f.currency(Number.isFinite(qty) ? qty * price : 0)}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -257,7 +262,7 @@ export function OrderForm({
                           variant="ghost"
                           size="icon"
                           onClick={() => remove(index)}
-                          aria-label={`Remover ${product?.name ?? fallback?.name ?? "item"}`}
+                          aria-label={t.orders.form.removeItem(product?.name ?? fallback?.name ?? t.orders.form.item)}
                         >
                           <Trash2 aria-hidden />
                         </Button>
@@ -270,23 +275,23 @@ export function OrderForm({
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={2} className="font-medium">
-                  Total
+                  {t.common.total}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell" />
-                <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(total)}</TableCell>
+                <TableCell className="text-right font-semibold tabular-nums">{f.currency(total)}</TableCell>
                 <TableCell />
               </TableRow>
             </TableFooter>
           </Table>
         </div>
-        {errors.items?.message && <p className="text-sm text-destructive">{errors.items.message}</p>}
-        {errors.items?.root?.message && <p className="text-sm text-destructive">{errors.items.root.message}</p>}
+        {errors.items?.message && <p className="text-sm text-destructive">{tm(errors.items.message)}</p>}
+        {errors.items?.root?.message && <p className="text-sm text-destructive">{tm(errors.items.root.message)}</p>}
       </fieldset>
 
       <div className="flex max-w-xl flex-col gap-2">
-        <Label htmlFor="notes">Observações (opcional)</Label>
+        <Label htmlFor="notes">{t.orders.form.notes}</Label>
         <Textarea id="notes" rows={3} aria-invalid={!!errors.notes} {...register("notes")} />
-        {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
+        {errors.notes && <p className="text-sm text-destructive">{tm(errors.notes.message)}</p>}
       </div>
 
       {formError && (
@@ -301,10 +306,10 @@ export function OrderForm({
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-          {order ? "Salvar pedido" : "Criar pedido"}
+          {order ? t.orders.form.save : t.orders.form.create}
         </Button>
         <Button asChild variant="outline">
-          <Link href={order ? `/pedidos/${order.id}` : "/pedidos"}>Cancelar</Link>
+          <Link href={order ? `/pedidos/${order.id}` : "/pedidos"}>{t.common.cancel}</Link>
         </Button>
       </div>
     </form>

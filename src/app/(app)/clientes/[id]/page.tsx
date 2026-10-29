@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth";
 import { getCustomer } from "@/lib/data/customers";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Editar cliente",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.editCustomer };
+}
 
 export default function EditCustomerPage({ params }: PageProps<"/clientes/[id]">) {
   return (
@@ -23,7 +25,7 @@ export default function EditCustomerPage({ params }: PageProps<"/clientes/[id]">
 }
 
 async function EditCustomer({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireUser();
+  const [user, { t }] = await Promise.all([requireUser(), getI18n()]);
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) {
     notFound();
@@ -42,12 +44,12 @@ async function EditCustomer({ params }: { params: Promise<{ id: string }> }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{c.name}</h1>
-        <Badge variant={c.active ? "secondary" : "outline"}>{c.active ? "Ativo" : "Inativo"}</Badge>
+        <Badge variant={c.active ? "secondary" : "outline"}>{c.active ? t.common.active : t.common.inactive}</Badge>
       </div>
       <CustomerForm customer={c} />
       {user.role === "admin" && (
         <div className="max-w-2xl border-t pt-6">
-          <StatusToggleButton endpoint={`/api/customers/${c.id}`} active={c.active} noun="cliente" />
+          <StatusToggleButton endpoint={`/api/customers/${c.id}`} active={c.active} noun={t.customers.noun} />
         </div>
       )}
     </div>

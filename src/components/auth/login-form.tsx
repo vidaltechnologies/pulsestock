@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +24,9 @@ function safeNextPath(next: string | null) {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, tm } = useI18n();
   const [formError, setFormError] = useState<string | null>(() =>
-    searchParams.get("motivo") === "desativado"
-      ? "Seu acesso foi desativado. Fale com um administrador."
-      : null,
+    searchParams.get("motivo") === "desativado" ? "deactivated" : null,
   );
 
   const {
@@ -49,13 +49,13 @@ export function LoginForm() {
         body: JSON.stringify(values),
       });
     } catch {
-      setFormError("Não foi possível conectar. Verifique sua internet.");
+      setFormError(t.common.connectionError);
       return;
     }
 
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
-      setFormError(body?.error.message ?? "Não foi possível entrar. Tente de novo.");
+      setFormError(body?.error.message ?? t.login.error);
       return;
     }
 
@@ -66,25 +66,25 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">E-mail</Label>
+        <Label htmlFor="email">{t.login.email}</Label>
         <Input
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="voce@empresa.com"
+          placeholder={t.login.emailPlaceholder}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? "email-error" : undefined}
           {...register("email")}
         />
         {errors.email && (
           <p id="email-error" className="text-sm text-destructive">
-            {errors.email.message}
+            {tm(errors.email.message)}
           </p>
         )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">{t.login.password}</Label>
         <Input
           id="password"
           type="password"
@@ -95,7 +95,7 @@ export function LoginForm() {
         />
         {errors.password && (
           <p id="password-error" className="text-sm text-destructive">
-            {errors.password.message}
+            {tm(errors.password.message)}
           </p>
         )}
       </div>
@@ -105,13 +105,14 @@ export function LoginForm() {
           role="alert"
           className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
         >
-          {formError}
+          {/* O aviso de acesso desativado segue o idioma se ele for trocado. */}
+          {formError === "deactivated" ? t.login.deactivated : formError}
         </p>
       )}
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-        Entrar
+        {t.login.submit}
       </Button>
     </form>
   );

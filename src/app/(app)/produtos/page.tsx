@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth";
 import { listCategories, listProducts } from "@/lib/data/products";
-import { formatCurrency, formatInteger } from "@/lib/format";
+import { getI18n } from "@/lib/i18n/server";
 import { productListQuerySchema } from "@/lib/validations/product";
 
-export const metadata: Metadata = {
-  title: "Produtos",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.products };
+}
 
 const PAGE_SIZE = 20;
 
@@ -31,13 +32,14 @@ const STATUS_FROM_URL = { ativos: "active", inativos: "inactive", todos: "all" }
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function ProductsPage({ searchParams }: PageProps<"/produtos">) {
+export default async function ProductsPage({ searchParams }: PageProps<"/produtos">) {
+  const { t } = await getI18n();
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Produtos</h1>
-          <p className="text-sm text-muted-foreground">Catálogo, preços e saldo em estoque.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.meta.products}</h1>
+          <p className="text-sm text-muted-foreground">{t.products.subtitle}</p>
         </div>
         <Suspense>
           <AdminActions />
@@ -52,7 +54,7 @@ export default function ProductsPage({ searchParams }: PageProps<"/produtos">) {
 }
 
 async function AdminActions() {
-  const user = await requireUser();
+  const [user, { t }] = await Promise.all([requireUser(), getI18n()]);
   if (user.role !== "admin") {
     return null;
   }
@@ -61,13 +63,13 @@ async function AdminActions() {
       <Button asChild variant="outline">
         <Link href="/produtos/categorias">
           <Tags aria-hidden />
-          Categorias
+          {t.products.categories}
         </Link>
       </Button>
       <Button asChild>
         <Link href="/produtos/novo">
           <Plus aria-hidden />
-          Novo produto
+          {t.products.newProduct}
         </Link>
       </Button>
     </div>
@@ -80,7 +82,7 @@ function first(value: string | string[] | undefined) {
 
 async function ProductList({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
-  const user = await requireUser();
+  const [user, { t, f }] = await Promise.all([requireUser(), getI18n()]);
   const statusParam = first(params.status) ?? "ativos";
   const query = productListQuerySchema.parse({
     q: first(params.busca) ?? "",
@@ -94,7 +96,7 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
   if (products.error || categories.error) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        Não foi possível carregar os produtos. Recarregue a página.
+        {t.products.loadError}
       </p>
     );
   }
@@ -128,13 +130,13 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>SKU</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Categoria</TableHead>
-              <TableHead className="text-right">Preço de venda</TableHead>
-              <TableHead className="text-right">Estoque</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              {isAdmin && <TableHead className="sr-only">Ações</TableHead>}
+              <TableHead>{t.products.sku}</TableHead>
+              <TableHead>{t.common.name}</TableHead>
+              <TableHead className="hidden md:table-cell">{t.products.category}</TableHead>
+              <TableHead className="text-right">{t.products.salePrice}</TableHead>
+              <TableHead className="text-right">{t.products.stock}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t.common.status}</TableHead>
+              {isAdmin && <TableHead className="sr-only">{t.common.actions}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -142,8 +144,8 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
               <TableRow>
                 <TableCell colSpan={isAdmin ? 7 : 6} className="py-10 text-center text-muted-foreground">
                   {query.q || query.categoryId || query.status !== "active"
-                    ? "Nenhum produto encontrado com esses filtros."
-                    : "Nenhum produto cadastrado ainda."}
+                    ? t.products.emptyFiltered
+                    : t.products.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -153,27 +155,27 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
                     <TableCell className="font-mono text-xs">{product.sku}</TableCell>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">
-                      {product.category?.name ?? "Sem categoria"}
+                      {product.category?.name ?? t.products.noCategory}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatCurrency(product.salePrice)}
+                      {f.currency(product.salePrice)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       <span className="inline-flex items-center gap-2">
-                        {product.lowStock && <Badge variant="destructive">Baixo</Badge>}
-                        {formatInteger(product.stockQuantity)} {product.unit}
+                        {product.lowStock && <Badge variant="destructive">{t.products.low}</Badge>}
+                        {f.integer(product.stockQuantity)} {product.unit}
                       </span>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge variant={product.active ? "secondary" : "outline"}>
-                        {product.active ? "Ativo" : "Inativo"}
+                        {product.active ? t.common.active : t.common.inactive}
                       </Badge>
                     </TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
                         <Button asChild variant="ghost" size="sm">
-                          <Link href={`/produtos/${product.id}`} aria-label={`Editar ${product.name}`}>
-                            Editar
+                          <Link href={`/produtos/${product.id}`} aria-label={t.common.editItem(product.name)}>
+                            {t.common.edit}
                           </Link>
                         </Button>
                       </TableCell>
@@ -186,29 +188,29 @@ async function ProductList({ searchParams }: { searchParams: Promise<SearchParam
         </Table>
       </div>
 
-      <nav aria-label="Paginação" className="flex items-center justify-between gap-4 text-sm">
+      <nav aria-label={t.common.pagination} className="flex items-center justify-between gap-4 text-sm">
         <p className="text-muted-foreground">
-          {total === 1 ? "1 produto" : `${formatInteger(total)} produtos`}
-          {pageCount > 1 && ` · página ${query.page} de ${pageCount}`}
+          {t.products.count(total, f.integer(total))}
+          {pageCount > 1 && t.common.pageOf(query.page, pageCount)}
         </p>
         {pageCount > 1 && (
           <div className="flex gap-2">
             {query.page > 1 ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page - 1)}>Anterior</Link>
+                <Link href={pageHref(query.page - 1)}>{t.common.previous}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Anterior
+                {t.common.previous}
               </Button>
             )}
             {query.page < pageCount ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page + 1)}>Próxima</Link>
+                <Link href={pageHref(query.page + 1)}>{t.common.next}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Próxima
+                {t.common.next}
               </Button>
             )}
           </div>

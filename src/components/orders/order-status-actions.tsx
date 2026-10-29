@@ -4,15 +4,21 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import type { ApiErrorBody } from "@/lib/api";
+import type { Dictionary } from "@/lib/i18n";
 import { canChangeStatus, type OrderStatus } from "@/lib/validations/order";
 
-const ACTIONS: { status: OrderStatus; label: string; confirm?: string }[] = [
-  { status: "confirmed", label: "Confirmar pedido", confirm: "Confirmar o pedido? O estoque dos itens será baixado." },
-  { status: "shipped", label: "Marcar como enviado" },
-  { status: "delivered", label: "Marcar como entregue" },
-];
+const ACTIONS = [
+  { status: "confirmed", label: "confirm", confirm: "confirmQuestion" },
+  { status: "shipped", label: "ship" },
+  { status: "delivered", label: "deliver" },
+] as const satisfies {
+  status: OrderStatus;
+  label: keyof Dictionary["orders"]["actions"];
+  confirm?: keyof Dictionary["orders"]["actions"];
+}[];
 
 // Botões de próxima etapa do pedido, conforme o status e o perfil.
 export function OrderStatusActions({
@@ -25,6 +31,7 @@ export function OrderStatusActions({
   isAdmin: boolean;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, setPending] = useState<OrderStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,12 +49,12 @@ export function OrderStatusActions({
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
-        setError(body?.error.message ?? "Não foi possível mudar o status.");
+        setError(body?.error.message ?? t.orders.actions.error);
         return;
       }
       router.refresh();
     } catch {
-      setError("Não foi possível conectar. Verifique sua internet.");
+      setError(t.common.connectionError);
     } finally {
       setPending(null);
     }
@@ -67,10 +74,10 @@ export function OrderStatusActions({
             key={action.status}
             type="button"
             disabled={pending !== null}
-            onClick={() => change(action.status, action.confirm)}
+            onClick={() => change(action.status, "confirm" in action ? t.orders.actions[action.confirm] : undefined)}
           >
             {pending === action.status && <Loader2 className="animate-spin" aria-hidden />}
-            {action.label}
+            {t.orders.actions[action.label]}
           </Button>
         ))}
         {canCancel && (
@@ -83,13 +90,13 @@ export function OrderStatusActions({
               change(
                 "cancelled",
                 status === "confirmed"
-                  ? "Cancelar o pedido? O estoque dos itens será devolvido."
-                  : "Cancelar o pedido?",
+                  ? t.orders.actions.cancelConfirmedQuestion
+                  : t.orders.actions.cancelQuestion,
               )
             }
           >
             {pending === "cancelled" && <Loader2 className="animate-spin" aria-hidden />}
-            Cancelar pedido
+            {t.orders.actions.cancel}
           </Button>
         )}
       </div>

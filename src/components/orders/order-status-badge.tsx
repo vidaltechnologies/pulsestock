@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
+import { getI18n } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
-import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/validations/order";
+import type { OrderStatus } from "@/lib/validations/order";
 
 const STYLES: Record<OrderStatus, string> = {
   pending: "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200",
@@ -10,10 +11,11 @@ const STYLES: Record<OrderStatus, string> = {
   cancelled: "border-border bg-transparent text-muted-foreground",
 };
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+export async function OrderStatusBadge({ status }: { status: OrderStatus }) {
+  const { t } = await getI18n();
   return (
     <Badge variant="outline" className={cn(STYLES[status])}>
-      {ORDER_STATUS_LABELS[status]}
+      {t.orders.statuses[status]}
     </Badge>
   );
 }

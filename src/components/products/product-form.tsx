@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,7 @@ export function ProductForm({
   categories: Category[];
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -74,7 +76,7 @@ export function ProductForm({
         body: JSON.stringify(payload),
       });
     } catch {
-      setFormError("Não foi possível conectar. Verifique sua internet.");
+      setFormError(t.common.connectionError);
       return;
     }
 
@@ -92,7 +94,7 @@ export function ProductForm({
           }
         }
       }
-      setFormError(body?.error.message ?? "Não foi possível salvar. Tente de novo.");
+      setFormError(body?.error.message ?? t.common.saveError);
       return;
     }
 
@@ -103,18 +105,18 @@ export function ProductForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex max-w-2xl flex-col gap-5">
       <div className="grid gap-5 sm:grid-cols-[12rem_1fr]">
-        <Field id="sku" label="SKU" error={errors.sku?.message}>
+        <Field id="sku" label={t.products.sku} error={errors.sku?.message}>
           <Input
             id="sku"
             autoComplete="off"
             className="font-mono uppercase"
-            placeholder="Ex.: CAM-001"
+            placeholder={t.products.form.skuPlaceholder}
             aria-invalid={!!errors.sku}
             aria-describedby={errors.sku ? "sku-error" : undefined}
             {...register("sku")}
           />
         </Field>
-        <Field id="name" label="Nome" error={errors.name?.message}>
+        <Field id="name" label={t.common.name} error={errors.name?.message}>
           <Input
             id="name"
             aria-invalid={!!errors.name}
@@ -124,7 +126,7 @@ export function ProductForm({
         </Field>
       </div>
 
-      <Field id="description" label="Descrição (opcional)" error={errors.description?.message}>
+      <Field id="description" label={t.products.form.description} error={errors.description?.message}>
         <Textarea
           id="description"
           rows={3}
@@ -135,14 +137,14 @@ export function ProductForm({
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-[1fr_8rem]">
-        <Field id="categoryId" label="Categoria" error={errors.categoryId?.message}>
+        <Field id="categoryId" label={t.products.category} error={errors.categoryId?.message}>
           <NativeSelect
             id="categoryId"
             className="w-full" wrapperClassName="w-full"
             aria-invalid={!!errors.categoryId}
             {...register("categoryId")}
           >
-            <NativeSelectOption value="">Sem categoria</NativeSelectOption>
+            <NativeSelectOption value="">{t.products.noCategory}</NativeSelectOption>
             {categories.map((category) => (
               <NativeSelectOption key={category.id} value={category.id}>
                 {category.name}
@@ -150,7 +152,7 @@ export function ProductForm({
             ))}
           </NativeSelect>
         </Field>
-        <Field id="unit" label="Unidade" error={errors.unit?.message}>
+        <Field id="unit" label={t.products.form.unit} error={errors.unit?.message}>
           <Input
             id="unit"
             className="uppercase"
@@ -163,27 +165,27 @@ export function ProductForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-3">
-        <Field id="costPrice" label="Preço de custo (R$)" error={errors.costPrice?.message}>
+        <Field id="costPrice" label={t.products.form.costPrice} error={errors.costPrice?.message}>
           <Input
             id="costPrice"
             inputMode="decimal"
-            placeholder="0,00"
+            placeholder={t.products.form.decimalPlaceholder}
             aria-invalid={!!errors.costPrice}
             aria-describedby={errors.costPrice ? "costPrice-error" : undefined}
             {...register("costPrice")}
           />
         </Field>
-        <Field id="salePrice" label="Preço de venda (R$)" error={errors.salePrice?.message}>
+        <Field id="salePrice" label={t.products.form.salePrice} error={errors.salePrice?.message}>
           <Input
             id="salePrice"
             inputMode="decimal"
-            placeholder="0,00"
+            placeholder={t.products.form.decimalPlaceholder}
             aria-invalid={!!errors.salePrice}
             aria-describedby={errors.salePrice ? "salePrice-error" : undefined}
             {...register("salePrice")}
           />
         </Field>
-        <Field id="minStock" label="Estoque mínimo" error={errors.minStock?.message}>
+        <Field id="minStock" label={t.products.form.minStock} error={errors.minStock?.message}>
           <Input
             id="minStock"
             inputMode="numeric"
@@ -196,7 +198,7 @@ export function ProductForm({
 
       {!product && (
         <p className="text-sm text-muted-foreground">
-          O produto começa com estoque zero. O saldo muda pelas movimentações de estoque.
+          {t.products.form.startsAtZero}
         </p>
       )}
 
@@ -212,10 +214,10 @@ export function ProductForm({
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-          {product ? "Salvar alterações" : "Cadastrar produto"}
+          {product ? t.common.saveChanges : t.products.form.create}
         </Button>
         <Button asChild variant="outline">
-          <Link href="/produtos">Cancelar</Link>
+          <Link href="/produtos">{t.common.cancel}</Link>
         </Button>
       </div>
     </form>
@@ -233,13 +235,14 @@ function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const { tm } = useI18n();
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       {children}
       {error && (
         <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
+          {tm(error)}
         </p>
       )}
     </div>

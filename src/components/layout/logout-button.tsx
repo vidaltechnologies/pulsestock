@@ -4,10 +4,12 @@ import { Loader2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, setPending] = useState(false);
 
   async function handleLogout() {
@@ -23,7 +25,7 @@ export function LogoutButton() {
   return (
     <Button variant="ghost" size="sm" onClick={handleLogout} disabled={pending}>
       {pending ? <Loader2 className="animate-spin" aria-hidden /> : <LogOut aria-hidden />}
-      Sair
+      {t.account.logout}
     </Button>
   );
 }

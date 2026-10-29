@@ -13,7 +13,9 @@ import {
   YAxis,
 } from "recharts";
 
-import { formatCurrency, formatInteger } from "@/lib/format";
+import { useI18n } from "@/components/i18n/i18n-provider";
+import type { Format } from "@/lib/format";
+import type { Dictionary } from "@/lib/i18n";
 
 // Gráficos do dashboard. Uma série por gráfico, na cor --chart-1 (azul da
 // marca, ajustado para o tema escuro); textos e eixos usam as cores de texto.
@@ -21,19 +23,6 @@ import { formatCurrency, formatInteger } from "@/lib/format";
 const SERIES = "var(--chart-1)";
 const GRID = "var(--border)";
 const AXIS_TEXT = { fill: "var(--muted-foreground)", fontSize: 12 };
-
-const compactCurrency = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-// "2026-10-29" → "29/10", sem passar por Date (evita diferença de fuso).
-function shortDay(day: string) {
-  const [, month, date] = day.split("-");
-  return `${date}/${month}`;
-}
 
 function TooltipBox({ title, lines }: { title: string; lines: string[] }) {
   return (
@@ -48,28 +37,31 @@ function TooltipBox({ title, lines }: { title: string; lines: string[] }) {
   );
 }
 
-// O que os tooltips usam das props que o Recharts passa.
-type TooltipProps = { active?: boolean; payload?: ReadonlyArray<{ payload?: unknown }> };
+// O que os tooltips usam das props que o Recharts passa, mais o idioma.
+type TooltipProps = {
+  active?: boolean;
+  payload?: ReadonlyArray<{ payload?: unknown }>;
+  t: Dictionary;
+  f: Format;
+};
 
 type SalesPoint = { day: string; total: number; orders: number };
 
-function SalesTooltip({ active, payload }: TooltipProps) {
+function SalesTooltip({ active, payload, t, f }: TooltipProps) {
   const point = payload?.[0]?.payload as SalesPoint | undefined;
   if (!active || !point) {
     return null;
   }
   return (
     <TooltipBox
-      title={shortDay(point.day)}
-      lines={[
-        formatCurrency(point.total),
-        `${formatInteger(point.orders)} ${point.orders === 1 ? "pedido" : "pedidos"}`,
-      ]}
+      title={f.shortDay(point.day)}
+      lines={[f.currency(point.total), t.dashboard.ordersCount(point.orders, f.integer(point.orders))]}
     />
   );
 }
 
 export function SalesByDayChart({ data }: { data: SalesPoint[] }) {
+  const { t, f } = useI18n();
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -77,14 +69,14 @@ export function SalesByDayChart({ data }: { data: SalesPoint[] }) {
           <CartesianGrid vertical={false} stroke={GRID} />
           <XAxis
             dataKey="day"
-            tickFormatter={shortDay}
+            tickFormatter={f.shortDay}
             tick={AXIS_TEXT}
             tickLine={false}
             axisLine={{ stroke: GRID }}
             minTickGap={24}
           />
           <YAxis
-            tickFormatter={(v: number) => compactCurrency.format(v)}
+            tickFormatter={f.compactCurrency}
             tick={AXIS_TEXT}
             tickLine={false}
             axisLine={false}
@@ -92,7 +84,7 @@ export function SalesByDayChart({ data }: { data: SalesPoint[] }) {
             allowDecimals={false}
           />
           <Tooltip
-            content={SalesTooltip}
+            content={(props) => <SalesTooltip {...props} t={t} f={f} />}
             cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1 }}
           />
           <Area
@@ -133,7 +125,7 @@ function CategoryTick({
 
 type BarRow = { label: string; value: number; detail?: string };
 
-function BarTooltip({ active, payload }: TooltipProps) {
+function BarTooltip({ active, payload }: Omit<TooltipProps, "t" | "f">) {
   const row = payload?.[0]?.payload as (BarRow & { formatted: string }) | undefined;
   if (!active || !row) {
     return null;
@@ -151,7 +143,8 @@ export function HorizontalBarChart({
   data: BarRow[];
   format: "currency" | "integer";
 }) {
-  const fmt = format === "currency" ? formatCurrency : formatInteger;
+  const { f } = useI18n();
+  const fmt = format === "currency" ? f.currency : f.integer;
   const rows = data.map((row) => ({ ...row, formatted: fmt(row.value) }));
   // 40px por barra: barra de até 24px e o resto de respiro.
   const height = Math.max(rows.length * 40, 80) + 8;

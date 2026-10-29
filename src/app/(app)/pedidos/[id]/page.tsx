@@ -21,18 +21,13 @@ import {
 } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth";
 import { getOrder } from "@/lib/data/orders";
-import { formatCurrency, formatInteger } from "@/lib/format";
+import { getI18n } from "@/lib/i18n/server";
 import { formatDocument } from "@/lib/validations/customer";
 
-export const metadata: Metadata = {
-  title: "Pedido",
-};
-
-const dateTime = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "America/Sao_Paulo",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.order };
+}
 
 export default function OrderPage({ params }: PageProps<"/pedidos/[id]">) {
   return (
@@ -48,7 +43,7 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
     notFound();
   }
 
-  const [user, result] = await Promise.all([requireUser(), getOrder(id)]);
+  const [user, result, { t, f }] = await Promise.all([requireUser(), getOrder(id), getI18n()]);
   if (result.error?.code === "not_found") {
     notFound();
   }
@@ -63,17 +58,17 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
         <Button asChild variant="ghost" size="sm" className="-ml-3">
           <Link href="/pedidos">
             <ArrowLeft aria-hidden />
-            Pedidos
+            {t.orders.back}
           </Link>
         </Button>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Pedido #{order.number}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.orders.title(order.number)}</h1>
           <OrderStatusBadge status={order.status} />
         </div>
         <p className="text-sm text-muted-foreground">
-          Criado em {dateTime.format(new Date(order.createdAt))}
-          {order.createdBy.name && ` por ${order.createdBy.name}`}
-          {order.confirmedAt && ` · confirmado em ${dateTime.format(new Date(order.confirmedAt))}`}
+          {t.orders.createdAt(f.dateTime(order.createdAt))}
+          {order.createdBy.name && t.orders.createdBy(order.createdBy.name)}
+          {order.confirmedAt && t.orders.confirmedAt(f.dateTime(order.confirmedAt))}
         </p>
       </div>
 
@@ -83,7 +78,7 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
           <Button asChild variant="outline">
             <Link href={`/pedidos/${order.id}/editar`}>
               <Pencil aria-hidden />
-              Editar itens
+              {t.orders.editItems}
             </Link>
           </Button>
         )}
@@ -94,10 +89,10 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead className="text-right">Qtd.</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Preço</TableHead>
-                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead>{t.common.product}</TableHead>
+                <TableHead className="text-right">{t.common.qty}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{t.common.price}</TableHead>
+                <TableHead className="text-right">{t.common.subtotal}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,28 +103,28 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
                     <span className="block font-mono text-xs text-muted-foreground">{item.product.sku}</span>
                     {order.status === "pending" && item.quantity > item.product.stockQuantity && (
                       <span className="block text-xs text-amber-700 dark:text-amber-300">
-                        Saldo atual: {formatInteger(item.product.stockQuantity)} {item.product.unit}
+                        {t.common.currentStock(f.integer(item.product.stockQuantity), item.product.unit)}
                       </span>
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {formatInteger(item.quantity)} {item.product.unit}
+                    {f.integer(item.quantity)} {item.product.unit}
                   </TableCell>
                   <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                    {formatCurrency(item.unitPrice)}
+                    {f.currency(item.unitPrice)}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCurrency(item.subtotal)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{f.currency(item.subtotal)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={2} className="font-medium">
-                  Total
+                  {t.common.total}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell" />
                 <TableCell className="text-right font-semibold tabular-nums">
-                  {formatCurrency(order.totalAmount)}
+                  {f.currency(order.totalAmount)}
                 </TableCell>
               </TableRow>
             </TableFooter>
@@ -139,7 +134,7 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Cliente</CardTitle>
+              <CardTitle className="text-base">{t.common.customer}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-1 text-sm">
               <Link href={`/clientes/${order.customer.id}`} className="font-medium hover:underline">
@@ -157,7 +152,7 @@ async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
           {order.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Observações</CardTitle>
+                <CardTitle className="text-base">{t.orders.notes}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm whitespace-pre-line">{order.notes}</CardContent>
             </Card>

@@ -19,12 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { listCustomers } from "@/lib/data/customers";
-import { formatInteger } from "@/lib/format";
+import { getI18n } from "@/lib/i18n/server";
 import { customerListQuerySchema, formatDocument } from "@/lib/validations/customer";
 
-export const metadata: Metadata = {
-  title: "Clientes",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.customers };
+}
 
 const PAGE_SIZE = 20;
 
@@ -37,18 +38,19 @@ function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default function CustomersPage({ searchParams }: PageProps<"/clientes">) {
+export default async function CustomersPage({ searchParams }: PageProps<"/clientes">) {
+  const { t } = await getI18n();
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-          <p className="text-sm text-muted-foreground">Cadastro de clientes para os pedidos de venda.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.meta.customers}</h1>
+          <p className="text-sm text-muted-foreground">{t.customers.subtitle}</p>
         </div>
         <Button asChild>
           <Link href="/clientes/novo">
             <Plus aria-hidden />
-            Novo cliente
+            {t.customers.newCustomer}
           </Link>
         </Button>
       </div>
@@ -71,11 +73,11 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
     pageSize: PAGE_SIZE,
   });
 
-  const result = await listCustomers(query);
+  const [result, { t, f }] = await Promise.all([listCustomers(query), getI18n()]);
   if (result.error) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        Não foi possível carregar os clientes. Recarregue a página.
+        {t.customers.loadError}
       </p>
     );
   }
@@ -96,26 +98,26 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
     <div className="flex flex-col gap-4">
       <Form action="/clientes" className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-          <Label htmlFor="busca">Buscar</Label>
+          <Label htmlFor="busca">{t.common.search}</Label>
           <Input
             id="busca"
             name="busca"
             type="search"
-            placeholder="Nome, e-mail ou CPF/CNPJ"
+            placeholder={t.customers.searchPlaceholder}
             defaultValue={query.q}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">{t.common.status}</Label>
           <NativeSelect id="status" name="status" defaultValue={status}>
-            <NativeSelectOption value="ativos">Ativos</NativeSelectOption>
-            <NativeSelectOption value="inativos">Inativos</NativeSelectOption>
-            <NativeSelectOption value="todos">Todos</NativeSelectOption>
+            <NativeSelectOption value="ativos">{t.common.activePlural}</NativeSelectOption>
+            <NativeSelectOption value="inativos">{t.common.inactivePlural}</NativeSelectOption>
+            <NativeSelectOption value="todos">{t.common.all}</NativeSelectOption>
           </NativeSelect>
         </div>
         <Button type="submit" variant="secondary">
           <Search aria-hidden />
-          Filtrar
+          {t.common.filter}
         </Button>
       </Form>
 
@@ -123,12 +125,12 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden sm:table-cell">CPF/CNPJ</TableHead>
-              <TableHead className="hidden lg:table-cell">Contato</TableHead>
-              <TableHead className="hidden md:table-cell">Cidade</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              <TableHead className="sr-only">Ações</TableHead>
+              <TableHead>{t.common.name}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t.customers.document}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t.customers.contact}</TableHead>
+              <TableHead className="hidden md:table-cell">{t.customers.city}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t.common.status}</TableHead>
+              <TableHead className="sr-only">{t.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,8 +138,8 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   {query.q || query.status !== "active"
-                    ? "Nenhum cliente encontrado com esses filtros."
-                    : "Nenhum cliente cadastrado ainda."}
+                    ? t.customers.emptyFiltered
+                    : t.customers.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -155,13 +157,13 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={c.active ? "secondary" : "outline"}>
-                      {c.active ? "Ativo" : "Inativo"}
+                      {c.active ? t.common.active : t.common.inactive}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="ghost" size="sm">
-                      <Link href={`/clientes/${c.id}`} aria-label={`Editar ${c.name}`}>
-                        Editar
+                      <Link href={`/clientes/${c.id}`} aria-label={t.common.editItem(c.name)}>
+                        {t.common.edit}
                       </Link>
                     </Button>
                   </TableCell>
@@ -172,29 +174,29 @@ async function CustomerList({ searchParams }: { searchParams: Promise<SearchPara
         </Table>
       </div>
 
-      <nav aria-label="Paginação" className="flex items-center justify-between gap-4 text-sm">
+      <nav aria-label={t.common.pagination} className="flex items-center justify-between gap-4 text-sm">
         <p className="text-muted-foreground">
-          {total === 1 ? "1 cliente" : `${formatInteger(total)} clientes`}
-          {pageCount > 1 && ` · página ${query.page} de ${pageCount}`}
+          {t.customers.count(total, f.integer(total))}
+          {pageCount > 1 && t.common.pageOf(query.page, pageCount)}
         </p>
         {pageCount > 1 && (
           <div className="flex gap-2">
             {query.page > 1 ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page - 1)}>Anterior</Link>
+                <Link href={pageHref(query.page - 1)}>{t.common.previous}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Anterior
+                {t.common.previous}
               </Button>
             )}
             {query.page < pageCount ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={pageHref(query.page + 1)}>Próxima</Link>
+                <Link href={pageHref(query.page + 1)}>{t.common.next}</Link>
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled>
-                Próxima
+                {t.common.next}
               </Button>
             )}
           </div>

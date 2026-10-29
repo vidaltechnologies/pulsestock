@@ -12,28 +12,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ROLE_LABELS, requireRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { listUsers } from "@/lib/data/users";
+import type { Dictionary } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Usuários",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.users };
+}
 
-const dateTime = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "America/Sao_Paulo",
-});
-
-export default function UsersPage() {
+export default async function UsersPage() {
+  const { t } = await getI18n();
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Usuários</h1>
-        <p className="text-sm text-muted-foreground">
-          Perfil e acesso de cada pessoa. Novos usuários são convidados pelo painel do Supabase
-          (Authentication) e entram como operador.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.meta.users}</h1>
+        <p className="text-sm text-muted-foreground">{t.users.subtitle}</p>
       </div>
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
         <UsersTable />
@@ -44,7 +39,7 @@ export default function UsersPage() {
 
 async function UsersTable() {
   const me = await requireRole("admin");
-  const { data: users, error } = await listUsers();
+  const [{ data: users, error }, { t, f }] = await Promise.all([listUsers(), getI18n()]);
 
   if (error) {
     return (
@@ -52,7 +47,7 @@ async function UsersTable() {
         role="alert"
         className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
       >
-        Não foi possível carregar os usuários. Tente de novo.
+        {t.users.loadError}
       </p>
     );
   }
@@ -62,10 +57,10 @@ async function UsersTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Usuário</TableHead>
-            <TableHead className="hidden md:table-cell">Status</TableHead>
-            <TableHead className="hidden lg:table-cell">Último acesso</TableHead>
-            <TableHead>Perfil e acesso</TableHead>
+            <TableHead>{t.users.user}</TableHead>
+            <TableHead className="hidden md:table-cell">{t.common.status}</TableHead>
+            <TableHead className="hidden lg:table-cell">{t.users.lastSignIn}</TableHead>
+            <TableHead>{t.users.roleAndAccess}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,23 +72,21 @@ async function UsersTable() {
                   <span className="font-medium">{name}</span>
                   <span className="block text-xs text-muted-foreground">{user.email}</span>
                   <span className="mt-1 block md:hidden">
-                    <StatusBadge active={user.active} />
+                    <StatusBadge active={user.active} t={t} />
                   </span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <StatusBadge active={user.active} />
+                  <StatusBadge active={user.active} t={t} />
                 </TableCell>
                 <TableCell className="hidden tabular-nums lg:table-cell">
-                  {user.lastSignInAt
-                    ? dateTime.format(new Date(user.lastSignInAt))
-                    : "Nunca entrou"}
+                  {user.lastSignInAt ? f.dateTime(user.lastSignInAt) : t.users.neverSignedIn}
                 </TableCell>
                 <TableCell>
                   {user.id === me.id ? (
                     <span className="text-sm">
-                      {ROLE_LABELS[user.role]}
+                      {t.roles[user.role]}
                       <span className="block text-xs text-muted-foreground">
-                        Você não altera o próprio perfil.
+                        {t.users.selfNote}
                       </span>
                     </span>
                   ) : (
@@ -109,10 +102,10 @@ async function UsersTable() {
   );
 }
 
-function StatusBadge({ active }: { active: boolean }) {
+function StatusBadge({ active, t }: { active: boolean; t: Dictionary }) {
   return active ? (
-    <Badge variant="secondary">Ativo</Badge>
+    <Badge variant="secondary">{t.common.active}</Badge>
   ) : (
-    <Badge variant="outline">Desativado</Badge>
+    <Badge variant="outline">{t.users.deactivated}</Badge>
   );
 }
