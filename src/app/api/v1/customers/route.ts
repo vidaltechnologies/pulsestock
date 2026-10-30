@@ -1,6 +1,4 @@
-import { NextResponse } from "next/server";
-
-import { apiError, parseJsonBody } from "@/lib/api";
+import { apiError, created, paginated, parseJsonBody } from "@/lib/api";
 import { requireApiUser } from "@/lib/api-auth";
 import { createCustomer, listCustomers } from "@/lib/data/customers";
 import { customerListQuerySchema, customerSchema } from "@/lib/validations/customer";
@@ -20,10 +18,7 @@ export async function GET(request: Request) {
     return apiError(error.status, error.code, error.message);
   }
 
-  return NextResponse.json({
-    data: data.items,
-    pagination: { page: query.page, pageSize: query.pageSize, total: data.total },
-  });
+  return paginated(data.items, data.total, query);
 }
 
 // Cadastro (qualquer usuário ativo). Cliente novo nasce ativo.
@@ -42,5 +37,5 @@ export async function POST(request: Request) {
   if (error) {
     return apiError(error.status, error.code, error.message);
   }
-  return NextResponse.json({ data }, { status: 201 });
+  return created(data, `/api/v1/customers/${data.id}`);
 }

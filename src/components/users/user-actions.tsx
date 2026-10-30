@@ -12,7 +12,7 @@ import type { AppRole } from "@/lib/auth";
 
 const ROLE_OPTIONS: AppRole[] = ["operator", "admin"];
 
-// Perfil e status de um usuário, alterados pelo admin com PATCH /api/users/{id}.
+// Perfil e status de um usuário, alterados pelo admin com PATCH /api/v1/users/{id}.
 export function UserActions({
   id,
   name,
@@ -36,7 +36,7 @@ export function UserActions({
     setPending("role" in change ? "role" : "active");
     setError(null);
     try {
-      const response = await fetch(`/api/users/${id}`, {
+      const response = await fetch(`/api/v1/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(change),

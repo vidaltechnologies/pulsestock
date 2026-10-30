@@ -52,6 +52,7 @@ describe("stockMovementListQuerySchema", () => {
     expect(stockMovementListQuerySchema.parse({ productId: "x", type: "venda", page: "0" })).toEqual({
       productId: undefined,
       type: undefined,
+      sort: "-createdAt",
       page: 1,
       pageSize: 20,
     });

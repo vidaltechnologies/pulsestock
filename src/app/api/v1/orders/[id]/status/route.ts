@@ -9,7 +9,7 @@ import { orderStatusChangeSchema } from "@/lib/validations/order";
 // Muda o status: { "status": "confirmed" | "shipped" | "delivered" | "cancelled" }.
 // Confirmar baixa o estoque (409 se faltar saldo, sem baixar nada);
 // cancelar é só do admin e devolve o estoque de pedido já confirmado.
-export async function POST(request: Request, ctx: RouteContext<"/api/orders/[id]/status">) {
+export async function POST(request: Request, ctx: RouteContext<"/api/v1/orders/[id]/status">) {
   const { user, error: authError } = await requireApiUser();
   if (authError) {
     return authError;

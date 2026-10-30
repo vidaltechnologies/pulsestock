@@ -5,7 +5,13 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { toDataError, type DataError, type DataResult } from "@/lib/data/products";
 import { getDisplayNames } from "@/lib/data/users";
 import { createClient } from "@/lib/supabase/server";
-import type { OrderInput, OrderListQuery, OrderStatus } from "@/lib/validations/order";
+import {
+  type ORDER_SORT_FIELDS,
+  type OrderInput,
+  type OrderListQuery,
+  type OrderStatus,
+} from "@/lib/validations/order";
+import { parseSort } from "@/lib/validations/sort";
 
 // Pedidos de venda. Gravação e troca de status passam pelas funções
 // save_order e change_order_status do banco, que fazem tudo numa transação.
@@ -99,12 +105,19 @@ function toSummary(row: SummaryRow): OrderSummary {
   };
 }
 
+const ORDER_SORT_COLUMNS = {
+  number: "number",
+  createdAt: "created_at",
+  totalAmount: "total_amount",
+} as const satisfies Record<(typeof ORDER_SORT_FIELDS)[number], string>;
+
 export async function listOrders(
   query: OrderListQuery,
 ): Promise<DataResult<{ items: OrderSummary[]; total: number }>> {
   const supabase = await createClient();
   const from = (query.page - 1) * query.pageSize;
   const search = parseSearch(query.q);
+  const sort = parseSort(query.sort);
 
   // !inner faz o filtro pelo nome do cliente valer para o pedido.
   const customerEmbed = search.name ? "customer:customers!inner(id, name)" : "customer:customers(id, name)";
@@ -114,7 +127,8 @@ export async function listOrders(
     .select(`id, number, status, total_amount, created_at, confirmed_at, ${customerEmbed}`, {
       count: "exact",
     })
-    .order("number", { ascending: false })
+    .order(ORDER_SORT_COLUMNS[sort.field], { ascending: sort.ascending })
+    .order("id")
     .range(from, from + query.pageSize - 1);
 
   if (search.number !== undefined) {

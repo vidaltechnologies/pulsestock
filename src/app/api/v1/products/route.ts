@@ -1,6 +1,4 @@
-import { NextResponse } from "next/server";
-
-import { apiError, parseJsonBody } from "@/lib/api";
+import { apiError, created, paginated, parseJsonBody } from "@/lib/api";
 import { requireApiUser } from "@/lib/api-auth";
 import { createProduct, listProducts } from "@/lib/data/products";
 import { productListQuerySchema, productSchema } from "@/lib/validations/product";
@@ -20,10 +18,7 @@ export async function GET(request: Request) {
     return apiError(error.status, error.code, error.message);
   }
 
-  return NextResponse.json({
-    data: data.items,
-    pagination: { page: query.page, pageSize: query.pageSize, total: data.total },
-  });
+  return paginated(data.items, data.total, query);
 }
 
 // Cadastro de produto (administrador). O saldo começa em zero e só muda pelas
@@ -43,5 +38,5 @@ export async function POST(request: Request) {
   if (error) {
     return apiError(error.status, error.code, error.message);
   }
-  return NextResponse.json({ data }, { status: 201 });
+  return created(data, `/api/v1/products/${data.id}`);
 }

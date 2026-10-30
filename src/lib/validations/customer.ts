@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sortSchema } from "./sort";
+
 // Dígitos verificadores de CPF (11 dígitos) e CNPJ (14 dígitos).
 function cpfValid(cpf: string) {
   if (/^(\d)\1{10}$/.test(cpf)) return false;
@@ -103,9 +105,12 @@ export type CustomerUpdateInput = z.output<typeof customerUpdateSchema>;
 
 export const CUSTOMER_STATUS = ["active", "inactive", "all"] as const;
 
+export const CUSTOMER_SORT_FIELDS = ["name", "createdAt"] as const;
+
 export const customerListQuerySchema = z.object({
   q: z.string().trim().max(100).catch(""),
   status: z.enum(CUSTOMER_STATUS).catch("active"),
+  sort: sortSchema(CUSTOMER_SORT_FIELDS, "name"),
   page: z.coerce.number().int().min(1).max(10_000).catch(1),
   pageSize: z.coerce.number().int().min(1).max(100).catch(20),
 });

@@ -42,7 +42,7 @@ export function OrderStatusActions({
     setPending(next);
     setError(null);
     try {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
+      const response = await fetch(`/api/v1/orders/${orderId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),

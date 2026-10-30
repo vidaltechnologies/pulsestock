@@ -79,3 +79,25 @@ export async function parseJsonBody<T extends z.ZodType>(
 
   return { data: result.data };
 }
+
+// Resposta de listagem: itens em `data` e a paginação ao lado.
+export function paginated<T>(
+  items: T[],
+  total: number,
+  query: { page: number; pageSize: number },
+) {
+  return NextResponse.json({
+    data: items,
+    pagination: {
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      totalPages: Math.ceil(total / query.pageSize),
+    },
+  });
+}
+
+// 201 com o cabeçalho Location apontando para o recurso criado.
+export function created<T>(data: T, location: string) {
+  return NextResponse.json({ data }, { status: 201, headers: { Location: location } });
+}

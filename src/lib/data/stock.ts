@@ -8,6 +8,7 @@ import type {
   StockMovementListQuery,
   StockMovementType,
 } from "@/lib/validations/stock";
+import { parseSort } from "@/lib/validations/sort";
 
 // Movimentações de estoque. O saldo do produto é atualizado por um gatilho
 // no banco a cada movimentação; aqui só se grava e se consulta o histórico.
@@ -58,11 +59,12 @@ export async function listStockMovements(
 ): Promise<DataResult<{ items: StockMovement[]; total: number }>> {
   const supabase = await createClient();
   const from = (query.page - 1) * query.pageSize;
+  const sort = parseSort(query.sort);
 
   let request = supabase
     .from("stock_movements")
     .select(MOVEMENT_COLUMNS, { count: "exact" })
-    .order("created_at", { ascending: false })
+    .order(sort.field === "quantity" ? "quantity" : "created_at", { ascending: sort.ascending })
     .order("id")
     .range(from, from + query.pageSize - 1);
 

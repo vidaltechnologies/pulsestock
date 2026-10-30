@@ -72,6 +72,7 @@ describe("orderListQuerySchema", () => {
       q: "",
       status: undefined,
       customerId: undefined,
+      sort: "-number",
       page: 1,
       pageSize: 20,
     });

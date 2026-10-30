@@ -86,14 +86,44 @@ describe("productUpdateSchema", () => {
 describe("productListQuerySchema", () => {
   it("usa padrões quando os filtros faltam ou são inválidos", () => {
     expect(
-      productListQuerySchema.parse({ status: "xyz", page: "-3", pageSize: "1000", categoryId: "x" }),
-    ).toEqual({ q: "", categoryId: undefined, status: "active", page: 1, pageSize: 20 });
+      productListQuerySchema.parse({
+        status: "xyz",
+        page: "-3",
+        pageSize: "1000",
+        categoryId: "x",
+        lowStock: "sim",
+        sort: "-preco",
+      }),
+    ).toEqual({
+      q: "",
+      categoryId: undefined,
+      status: "active",
+      lowStock: undefined,
+      sort: "name",
+      page: 1,
+      pageSize: 20,
+    });
   });
 
   it("lê os filtros da URL", () => {
-    expect(productListQuerySchema.parse({ q: " cam ", status: "all", page: "2", pageSize: "50" })).toEqual(
-      { q: "cam", categoryId: undefined, status: "all", page: 2, pageSize: 50 },
-    );
+    expect(
+      productListQuerySchema.parse({
+        q: " cam ",
+        status: "all",
+        lowStock: "true",
+        sort: "-salePrice",
+        page: "2",
+        pageSize: "50",
+      }),
+    ).toEqual({
+      q: "cam",
+      categoryId: undefined,
+      status: "all",
+      lowStock: true,
+      sort: "-salePrice",
+      page: 2,
+      pageSize: 50,
+    });
   });
 });
 

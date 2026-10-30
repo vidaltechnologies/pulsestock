@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sortSchema } from "./sort";
+
 export const STOCK_MOVEMENT_TYPES = ["in", "out", "adjustment"] as const;
 export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
 
@@ -44,9 +46,12 @@ export const stockMovementSchema = z
 export type StockMovementFormValues = z.input<typeof stockMovementSchema>;
 export type StockMovementInput = z.output<typeof stockMovementSchema>;
 
+export const STOCK_MOVEMENT_SORT_FIELDS = ["createdAt", "quantity"] as const;
+
 export const stockMovementListQuerySchema = z.object({
   productId: z.uuid().optional().catch(undefined),
   type: z.enum(STOCK_MOVEMENT_TYPES).optional().catch(undefined),
+  sort: sortSchema(STOCK_MOVEMENT_SORT_FIELDS, "-createdAt"),
   page: z.coerce.number().int().min(1).max(10_000).catch(1),
   pageSize: z.coerce.number().int().min(1).max(100).catch(20),
 });

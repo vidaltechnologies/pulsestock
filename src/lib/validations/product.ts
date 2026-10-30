@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sortSchema } from "./sort";
+
 // Campos vazios do formulário chegam como "". Aqui viram undefined (para o
 // campo cair no valor padrão ou na mensagem de obrigatório) e números com
 // vírgula, como "12,50", são aceitos.
@@ -90,12 +92,16 @@ export type ProductInput = z.output<typeof productSchema>;
 export type ProductUpdateInput = z.output<typeof productUpdateSchema>;
 
 export const PRODUCT_STATUS = ["active", "inactive", "all"] as const;
+export const PRODUCT_SORT_FIELDS = ["name", "sku", "salePrice", "stockQuantity", "createdAt"] as const;
 
 // Filtros da listagem. Valores inválidos caem no padrão em vez de dar erro.
 export const productListQuerySchema = z.object({
   q: z.string().trim().max(100).catch(""),
   categoryId: z.uuid().optional().catch(undefined),
   status: z.enum(PRODUCT_STATUS).catch("active"),
+  // Só produtos com saldo no mínimo ou abaixo (true) ou acima dele (false).
+  lowStock: z.enum(["true", "false"]).transform((v) => v === "true").optional().catch(undefined),
+  sort: sortSchema(PRODUCT_SORT_FIELDS, "name"),
   page: z.coerce.number().int().min(1).max(10_000).catch(1),
   pageSize: z.coerce.number().int().min(1).max(100).catch(20),
 });

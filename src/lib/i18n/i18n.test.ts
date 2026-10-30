@@ -5,6 +5,7 @@ import { getFormat } from "@/lib/format";
 import { getDictionary, translateMessage } from "@/lib/i18n";
 import { localeFromAcceptLanguage } from "@/lib/i18n/config";
 import { loginSchema } from "@/lib/validations/auth";
+import { refreshTokenSchema } from "@/lib/validations/auth-token";
 import { customerSchema } from "@/lib/validations/customer";
 import { orderSchema, orderStatusChangeSchema } from "@/lib/validations/order";
 import { categorySchema, productSchema, productUpdateSchema } from "@/lib/validations/product";
@@ -62,6 +63,8 @@ describe("mensagens de validação", () => {
   const invalid: [z.ZodType, unknown][] = [
     [loginSchema, {}],
     [loginSchema, { email: "x", password: "a".repeat(80) }],
+    [refreshTokenSchema, {}],
+    [refreshTokenSchema, { refreshToken: " " }],
     [productSchema, {}],
     [productSchema, { sku: "-x", name: "a".repeat(200), salePrice: "-1", costPrice: "1,234", minStock: "1.5", categoryId: "x" }],
     [productSchema, { sku: "A", name: "B", salePrice: "abc", minStock: "-1", unit: "a".repeat(20) }],

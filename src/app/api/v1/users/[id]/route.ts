@@ -8,7 +8,7 @@ import { userUpdateSchema } from "@/lib/validations/user";
 
 // Edição parcial pelo admin: { fullName?, role?, active? }. Mudar o próprio
 // perfil ou status → 409 self_change (o banco também recusa).
-export async function PATCH(request: Request, ctx: RouteContext<"/api/users/[id]">) {
+export async function PATCH(request: Request, ctx: RouteContext<"/api/v1/users/[id]">) {
   const { user, error: authError } = await requireApiUser("admin");
   if (authError) {
     return authError;

@@ -10,6 +10,7 @@ import type {
   CustomerListQuery,
   CustomerUpdateInput,
 } from "@/lib/validations/customer";
+import { parseSort } from "@/lib/validations/sort";
 
 // Acesso a clientes, usado pelas páginas e pela API. O RLS libera leitura,
 // cadastro e edição a usuários ativos; inativar e reativar é só do admin
@@ -56,11 +57,12 @@ export async function listCustomers(
 ): Promise<DataResult<{ items: Customer[]; total: number }>> {
   const supabase = await createClient();
   const from = (query.page - 1) * query.pageSize;
+  const sort = parseSort(query.sort);
 
   let request = supabase
     .from("customers")
     .select("*", { count: "exact" })
-    .order("name")
+    .order(sort.field === "createdAt" ? "created_at" : "name", { ascending: sort.ascending })
     .order("id")
     .range(from, from + query.pageSize - 1);
 

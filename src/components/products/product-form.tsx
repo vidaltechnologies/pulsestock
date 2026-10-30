@@ -70,7 +70,7 @@ export function ProductForm({
 
     let response: Response;
     try {
-      response = await fetch(product ? `/api/products/${product.id}` : "/api/products", {
+      response = await fetch(product ? `/api/v1/products/${product.id}` : "/api/v1/products", {
         method: product ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, parseJsonBody } from "@/lib/api";
+import { apiError, paginated, parseJsonBody } from "@/lib/api";
 import { requireApiUser } from "@/lib/api-auth";
 import { createStockMovement, listStockMovements } from "@/lib/data/stock";
 import {
@@ -24,10 +24,7 @@ export async function GET(request: Request) {
     return apiError(error.status, error.code, error.message);
   }
 
-  return NextResponse.json({
-    data: data.items,
-    pagination: { page: query.page, pageSize: query.pageSize, total: data.total },
-  });
+  return paginated(data.items, data.total, query);
 }
 
 // Nova movimentação. Entrada: qualquer usuário ativo. Saída e ajuste: admin.
