@@ -15,6 +15,8 @@ export async function POST(request: Request) {
   const supabase = createStatelessClient();
   const { data, error } = await supabase.auth.signInWithPassword(body.data);
   if (error || !data.session) {
+    // Quem chama vê só "credenciais inválidas"; o motivo real fica no log.
+    console.error("Token recusado pelo Supabase Auth:", error?.code ?? "sem sessão", error?.message);
     return apiError(401, "invalid_credentials", "E-mail ou senha incorretos.");
   }
 
