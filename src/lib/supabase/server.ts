@@ -12,10 +12,12 @@ import { createStatelessClient } from "./stateless";
 
 // Token de quem chama a API de fora do app (Postman, outro sistema), no
 // cabeçalho Authorization: Bearer <accessToken>. Sem o cabeçalho, undefined.
+// Um token malformado também volta, para ser recusado como inválido em vez
+// de cair na sessão do cookie.
 export async function getBearerToken(): Promise<string | undefined> {
   const authorization = (await headers()).get("authorization");
-  const match = authorization?.match(/^Bearer\s+(\S+)$/i);
-  return match?.[1];
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  return match?.[1].trim() || undefined;
 }
 
 // Cliente Supabase com a sessão do usuário da requisição, para Server
