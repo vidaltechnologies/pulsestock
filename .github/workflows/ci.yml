@@ -60,3 +60,32 @@ jobs:
             psql "$DB_URL" -v ON_ERROR_STOP=1 -f "supabase/tests/${check}_check.sql"
             echo "::endgroup::"
           done
+
+  api:
+    name: Testes de integração da API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Supabase local descartável (banco, login e API REST), usuários de teste
+      # e dados de demonstração. Nada aqui fala com o projeto na nuvem.
+      - name: Prepara o Supabase local
+        run: npm run test:api:setup
+      - name: Compila e sobe o app
+        run: |
+          nohup npm run test:api:serve > app.log 2>&1 &
+          for i in $(seq 1 90); do
+            curl -sf http://localhost:3100/api/v1/openapi.json > /dev/null && exit 0
+            sleep 2
+          done
+          cat app.log
+          exit 1
+      - name: Testes de integração
+        run: npm run test:api
+      - name: Log do app
+        if: failure()
+        run: cat app.log

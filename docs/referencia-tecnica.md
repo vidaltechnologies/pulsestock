@@ -258,6 +258,26 @@ O workflow `.github/workflows/ci.yml` roda em cada pull request e em cada push n
 
 1. **App:** `npm ci`, lint, typecheck, testes unitários e build.
 2. **Banco:** sobe o Postgres local do Supabase no runner, aplica todas as migrações, cria um administrador de teste, carrega os dados de demonstração e roda as cinco verificações (`supabase/tests/*_check.sql`). Qualquer verificação que falhar derruba o job.
+3. **API:** sobe um Supabase local completo (banco, login e API REST), cria um administrador e um operador de teste, carrega os dados de demonstração, compila e liga o app e roda os testes de integração em `tests/api/` contra a API de verdade, com token.
+
+### Testes de integração da API
+
+Os testes em `tests/api/` chamam `/api/v1` como um cliente externo faria e cobrem:
+
+- **Autenticação:** token, senha errada, token inválido, renovação, erros traduzidos pelo `Accept-Language` e `X-Request-Id`.
+- **Perfis:** o que o operador lê e o que só o administrador faz (403).
+- **Catálogo:** cadastro com `Location`, nome e SKU repetidos (409), validação campo a campo, filtros, ordenação e paginação.
+- **Pedidos e estoque:** pedido pendente não mexe no estoque; confirmar baixa; sem saldo → 409 sem baixar nada; transição inválida e edição de pedido confirmado → 409; só o administrador cancela, e o cancelamento devolve o estoque.
+
+Para rodar no seu computador (precisa do Docker). **Atenção:** o passo 1 recria o banco do Supabase local; o projeto na nuvem não é tocado.
+
+```bash
+npm run test:api:setup   # 1. Supabase local, usuários de teste e dados de demonstração
+npm run test:api:serve   # 2. compila e liga o app em http://localhost:3100 (deixe rodando)
+npm run test:api         # 3. em outro terminal, roda os testes
+```
+
+Os testes só aceitam rodar contra `localhost`, porque criam produtos, clientes e pedidos.
 
 ## Deploy na Vercel
 
@@ -285,6 +305,7 @@ As telas principais (login, dashboard, produtos, estoque, clientes, pedidos e us
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Gera os tipos de rota do Next.js e roda o TypeScript |
 | `npm test` | Testes unitários (Vitest) |
+| `npm run test:api:setup` / `test:api:serve` / `test:api` | Testes de integração da API contra um Supabase local (veja acima) |
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |
