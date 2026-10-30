@@ -48,6 +48,7 @@ The rules that must never fail live in PostgreSQL, not only in the UI: role-base
 - **Sales orders:** items with frozen prices, automatic totals, a pending → confirmed → shipped → delivered flow, and cancellation that returns the stock.
 - **Dashboard:** the month's sales, orders and average ticket, charts of daily sales, best sellers and orders by status, for 7, 30 or 90 days. Margin and inventory value are shown only to the admin.
 - **Users:** the admin changes roles and activates or deactivates accounts; a deactivated user loses access immediately.
+- **Password recovery:** a "Forgot your password?" link on the sign-in screen, an email with a single-use link and a screen to set the new password.
 - **REST API:** routes for products, inventory, customers, orders, dashboard and users, validated with Zod and with standard error responses.
 - **Demo data:** 16 products, 10 customers and about 110 orders from the last 60 days, created through the same functions the app uses.
 - **Three languages:** Portuguese, English and Spanish, picked with the flags at the top of the screen. Text, error messages, numbers and dates all change; on a first visit the browser language is used.

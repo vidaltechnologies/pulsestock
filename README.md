@@ -48,6 +48,7 @@ As regras que não podem falhar ficam no PostgreSQL, não só na tela: permissõ
 - **Pedidos de venda:** itens com preço congelado, total automático, fluxo pendente → confirmado → enviado → entregue e cancelamento que devolve o estoque.
 - **Dashboard:** vendas, pedidos e ticket médio do mês, gráficos de vendas por dia, mais vendidos e pedidos por status, com períodos de 7, 30 ou 90 dias. Margem e valor do estoque aparecem só para o administrador.
 - **Usuários:** o administrador muda o perfil e ativa ou desativa contas; quem é desativado perde o acesso na hora.
+- **Recuperação de senha:** link "Esqueci minha senha" no login, e-mail com link de uso único e tela para criar a nova senha.
 - **API REST:** rotas para produtos, estoque, clientes, pedidos, dashboard e usuários, com validação em Zod e erros padronizados.
 - **Dados de demonstração:** 16 produtos, 10 clientes e cerca de 110 pedidos dos últimos 60 dias, criados pelas mesmas funções do app.
 - **Três idiomas:** português, inglês e espanhol, escolhidos pelas bandeiras no topo da tela. Textos, mensagens de erro, números e datas mudam juntos; na primeira visita vale o idioma do navegador.

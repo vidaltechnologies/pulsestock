@@ -22,6 +22,8 @@ export const pt = {
     editOrder: "Editar pedido",
     users: "Usuários",
     login: "Entrar",
+    forgotPassword: "Esqueci minha senha",
+    resetPassword: "Nova senha",
   },
 
   common: {
@@ -113,6 +115,27 @@ export const pt = {
     submit: "Entrar",
     deactivated: "Seu acesso foi desativado. Fale com um administrador.",
     error: "Não foi possível entrar. Tente de novo.",
+    forgotPassword: "Esqueci minha senha",
+    passwordChanged: "Senha alterada. Entre com a nova senha.",
+  },
+
+  forgotPassword: {
+    title: "Recuperar senha",
+    description: "Informe o e-mail da sua conta. Vamos mandar um link para você criar uma nova senha.",
+    submit: "Enviar link",
+    sent: "Se esse e-mail tiver uma conta, enviamos um link para redefinir a senha. Ele vale por 1 hora.",
+    invalidLink: "O link é inválido, já foi usado ou venceu. Peça um novo abaixo.",
+    backToLogin: "Voltar para o login",
+  },
+
+  resetPassword: {
+    title: "Nova senha",
+    description: "Escolha uma senha com pelo menos 8 caracteres.",
+    password: "Nova senha",
+    confirmPassword: "Confirmar nova senha",
+    submit: "Salvar nova senha",
+    expired: "Seu link de recuperação venceu ou já foi usado.",
+    requestNew: "Pedir um novo link",
   },
 
   dashboard: {
@@ -338,6 +361,14 @@ export const pt = {
     emailValid: "Informe um e-mail válido.",
     passwordRequired: "Informe a senha.",
     passwordMax: "A senha pode ter no máximo 72 caracteres.",
+    newPasswordRequired: "Informe a nova senha.",
+    passwordMin: "Use no mínimo 8 caracteres.",
+    confirmPasswordRequired: "Confirme a nova senha.",
+    passwordsMismatch: "As senhas não são iguais.",
+    samePassword: "A nova senha precisa ser diferente da atual.",
+    weakPassword: "Essa senha é fraca demais. Escolha outra.",
+    recoveryExpired: "Seu link de recuperação venceu ou já foi usado. Peça um novo.",
+    tooManyRequests: "Muitos pedidos seguidos. Espere alguns minutos e tente de novo.",
     costPriceRequired: "Informe o preço de custo.",
     costPriceNegative: "O preço de custo não pode ser negativo.",
     salePriceRequired: "Informe o preço de venda.",

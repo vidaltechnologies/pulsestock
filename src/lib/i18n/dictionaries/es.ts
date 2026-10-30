@@ -21,6 +21,8 @@ export const es: Dictionary = {
     editOrder: "Editar pedido",
     users: "Usuarios",
     login: "Iniciar sesión",
+    forgotPassword: "Olvidé mi contraseña",
+    resetPassword: "Nueva contraseña",
   },
 
   common: {
@@ -112,6 +114,27 @@ export const es: Dictionary = {
     submit: "Entrar",
     deactivated: "Tu acceso fue desactivado. Habla con un administrador.",
     error: "No se pudo iniciar sesión. Inténtalo de nuevo.",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    passwordChanged: "Contraseña cambiada. Inicia sesión con la nueva contraseña.",
+  },
+
+  forgotPassword: {
+    title: "Recuperar contraseña",
+    description: "Ingresa el correo de tu cuenta. Te enviaremos un enlace para crear una nueva contraseña.",
+    submit: "Enviar enlace",
+    sent: "Si ese correo tiene una cuenta, enviamos un enlace para restablecer la contraseña. Vale por 1 hora.",
+    invalidLink: "El enlace no es válido, ya se usó o venció. Pide uno nuevo abajo.",
+    backToLogin: "Volver al inicio de sesión",
+  },
+
+  resetPassword: {
+    title: "Nueva contraseña",
+    description: "Elige una contraseña de al menos 8 caracteres.",
+    password: "Nueva contraseña",
+    confirmPassword: "Confirmar nueva contraseña",
+    submit: "Guardar nueva contraseña",
+    expired: "Tu enlace de recuperación venció o ya se usó.",
+    requestNew: "Pedir un nuevo enlace",
   },
 
   dashboard: {
@@ -334,6 +357,14 @@ export const es: Dictionary = {
     emailValid: "Ingresa un correo electrónico válido.",
     passwordRequired: "Ingresa la contraseña.",
     passwordMax: "La contraseña puede tener como máximo 72 caracteres.",
+    newPasswordRequired: "Ingresa la nueva contraseña.",
+    passwordMin: "Usa al menos 8 caracteres.",
+    confirmPasswordRequired: "Confirma la nueva contraseña.",
+    passwordsMismatch: "Las contraseñas no coinciden.",
+    samePassword: "La nueva contraseña debe ser diferente de la actual.",
+    weakPassword: "Esta contraseña es demasiado débil. Elige otra.",
+    recoveryExpired: "Tu enlace de recuperación venció o ya se usó. Pide uno nuevo.",
+    tooManyRequests: "Demasiadas solicitudes seguidas. Espera unos minutos e inténtalo de nuevo.",
     costPriceRequired: "Ingresa el precio de costo.",
     costPriceNegative: "El precio de costo no puede ser negativo.",
     salePriceRequired: "Ingresa el precio de venta.",

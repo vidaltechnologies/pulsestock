@@ -65,7 +65,22 @@ O estoque é baixado quando o pedido é confirmado.
 | `POST /api/v1/auth/token` | Login para clientes externos (Postman, outro sistema): mesmo corpo, devolve `{ tokenType, accessToken, refreshToken, expiresIn, expiresAt, user }` e não grava cookie |
 | `POST /api/v1/auth/refresh` | `{ refreshToken }` → par de tokens novo. Token inválido ou já usado → 401 `invalid_refresh_token` |
 | `POST /api/v1/auth/logout` | Encerra a sessão do cookie ou, com token, invalida o `refreshToken` dele |
+| `POST /api/v1/auth/password/forgot` | `{ email }` → envia o e-mail de recuperação. Responde 202 com ou sem conta para o e-mail (não revela quem é usuário); 429 `too_many_requests` no limite de envios |
+| `POST /api/v1/auth/password/reset` | `{ password }` (8 a 72 caracteres) com a sessão de recuperação → grava a senha, encerra a sessão e responde 204. Sem sessão → 401 `recovery_expired`; senha igual à atual ou fraca → 422 |
 | `GET /api/v1/me` | Usuário logado e perfil (401 sem sessão) |
+
+### Recuperação de senha
+
+1. Em `/login`, **Esqueci minha senha** leva a `/esqueci-senha`, que chama `POST /api/v1/auth/password/forgot`.
+2. O link do e-mail aponta para `/auth/confirm?token_hash=...&type=recovery`. Essa rota valida o token com `verifyOtp`, cria a sessão e segue para `/redefinir-senha`. Link inválido, usado ou vencido volta para `/esqueci-senha` com um aviso.
+3. `/redefinir-senha` grava a nova senha e manda para o login com o aviso de senha alterada.
+
+O link usa `token_hash` (e não o `code` do fluxo PKCE) para funcionar mesmo se o e-mail for aberto em outro navegador ou no celular. Para isso, o modelo do e-mail precisa apontar para `/auth/confirm`:
+
+- **Local:** já configurado em `supabase/config.toml` com `supabase/templates/recovery.html`. Os e-mails aparecem no Mailpit (`http://127.0.0.1:54324`).
+- **Nuvem:** em **Authentication → URL Configuration**, o **Site URL** precisa ser o endereço do app (`http://localhost:3000` para testar no computador, o da Vercel depois do deploy). Em **Authentication → Emails → Reset password**, troque o conteúdo pelo de `supabase/templates/recovery.html`.
+
+O envio de e-mail padrão do Supabase só entrega para e-mails da equipe do projeto e tem limite baixo por hora. Para usuários de verdade, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**.
 
 ### Token (Authorization: Bearer)
 
@@ -251,7 +266,7 @@ O app roda na Vercel sem configuração extra (Next.js é detectado sozinho). S�
    - `NEXT_PUBLIC_SUPABASE_URL` = `https://qhkemlxytksotndoxtak.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = a chave publicável (Supabase → Project Settings → API Keys)
 3. Clique em **Deploy**.
-4. No Supabase, em **Authentication → URL Configuration**, troque o **Site URL** pelo endereço da Vercel (por exemplo `https://pulsestock.vercel.app`). Os e-mails de convite e de troca de senha passam a apontar para o site publicado.
+4. No Supabase, em **Authentication → URL Configuration**, troque o **Site URL** pelo endereço da Vercel (por exemplo `https://pulsestock.vercel.app`). Os e-mails de convite e de recuperação de senha passam a apontar para o site publicado.
 
 Cada push na `main` gera um novo deploy, e cada pull request ganha um endereço de prévia.
 
