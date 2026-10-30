@@ -86,6 +86,8 @@ curl https://seu-app/api/v1/products?lowStock=true \
 
 ## Convenções da API
 
+A documentação interativa fica em **`/api/docs`** (Swagger UI): dá para gerar o token, clicar em **Authorize** e testar cada rota no navegador. A especificação OpenAPI 3.1 está em `/api/v1/openapi.json` e pode ser importada no Postman (Import → Link). Ela é gerada em `src/lib/openapi/` a partir dos mesmos esquemas Zod que validam as requisições, e `openapi.test.ts` falha se uma rota existir sem documentação ou se o formato de uma resposta mudar sem a documentação mudar junto.
+
 - Base: `/api/v1`. JSON na entrada e na saída.
 - Resposta de sucesso: `{ "data": ... }`. Listas: `{ "data": [...], "pagination": { "page", "pageSize", "total", "totalPages" } }`.
 - Erro: `{ "error": { "code", "message", "details"? } }`. `details` traz os erros por campo da validação. A mensagem sai no idioma de quem chamou (cookie do seletor ou `Accept-Language`).
