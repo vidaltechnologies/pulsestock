@@ -94,7 +94,7 @@ export function OrderForm({
 
     let response: Response;
     try {
-      response = await fetch(order ? `/api/orders/${order.id}` : "/api/orders", {
+      response = await fetch(order ? `/api/v1/orders/${order.id}` : "/api/v1/orders", {
         method: order ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),

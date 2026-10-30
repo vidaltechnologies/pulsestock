@@ -3,7 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getBearerToken } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
@@ -21,7 +21,8 @@ export type CurrentUser = {
 const getSession = cache(async (): Promise<{ signedIn: boolean; user: CurrentUser | null }> => {
   const supabase = await createClient();
 
-  const { data: claimsData } = await supabase.auth.getClaims();
+  // Com token no cabeçalho, getClaims valida esse token; sem ele, o da sessão.
+  const { data: claimsData } = await supabase.auth.getClaims(await getBearerToken());
   const claims = claimsData?.claims;
   if (!claims?.sub) {
     return { signedIn: false, user: null };

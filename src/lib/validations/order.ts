@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sortSchema } from "./sort";
+
 export const ORDER_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -51,10 +53,13 @@ export const orderStatusChangeSchema = z.object({
   }),
 });
 
+export const ORDER_SORT_FIELDS = ["number", "createdAt", "totalAmount"] as const;
+
 export const orderListQuerySchema = z.object({
   q: z.string().trim().max(100).catch(""),
   status: z.enum(ORDER_STATUSES).optional().catch(undefined),
   customerId: z.uuid().optional().catch(undefined),
+  sort: sortSchema(ORDER_SORT_FIELDS, "-number"),
   page: z.coerce.number().int().min(1).max(10_000).catch(1),
   pageSize: z.coerce.number().int().min(1).max(100).catch(20),
 });

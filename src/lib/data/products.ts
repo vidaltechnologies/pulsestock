@@ -10,7 +10,9 @@ import type {
   ProductInput,
   ProductListQuery,
   ProductUpdateInput,
+  PRODUCT_SORT_FIELDS,
 } from "@/lib/validations/product";
+import { parseSort } from "@/lib/validations/sort";
 
 // Acesso a produtos e categorias, usado pelas páginas e pela API. Roda com a
 // sessão do usuário, então o RLS decide o que cada perfil pode ler e gravar.
@@ -116,16 +118,25 @@ function searchTerm(q: string) {
   return q.replace(/[%_,()*\\:"'.]/g, " ").trim();
 }
 
+const PRODUCT_SORT_COLUMNS = {
+  name: "name",
+  sku: "sku",
+  salePrice: "sale_price",
+  stockQuantity: "stock_quantity",
+  createdAt: "created_at",
+} as const satisfies Record<(typeof PRODUCT_SORT_FIELDS)[number], string>;
+
 export async function listProducts(query: ProductListQuery): Promise<
   DataResult<{ items: Product[]; total: number }>
 > {
   const supabase = await createClient();
   const from = (query.page - 1) * query.pageSize;
+  const sort = parseSort(query.sort);
 
   let request = supabase
     .from("products")
     .select(PRODUCT_COLUMNS, { count: "exact" })
-    .order("name")
+    .order(PRODUCT_SORT_COLUMNS[sort.field], { ascending: sort.ascending })
     .order("id")
     .range(from, from + query.pageSize - 1);
 
@@ -138,6 +149,9 @@ export async function listProducts(query: ProductListQuery): Promise<
   }
   if (query.status !== "all") {
     request = request.eq("active", query.status === "active");
+  }
+  if (query.lowStock !== undefined) {
+    request = request.eq("low_stock", query.lowStock);
   }
 
   const { data, error, count } = await request;
@@ -270,4 +284,39 @@ export async function createCategory(input: CategoryInput): Promise<DataResult<C
     return { error: toDataError(error, "Já existe uma categoria com esse nome.") };
   }
   return { data };
+}
+
+const CATEGORY_NOT_FOUND: DataError = {
+  status: 404,
+  code: "not_found",
+  message: "Categoria não encontrada.",
+};
+
+export async function getCategory(id: string): Promise<DataResult<Category>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    return { error: toDataError(error, "") };
+  }
+  return data ? { data } : { error: CATEGORY_NOT_FOUND };
+}
+
+export async function updateCategory(id: string, input: CategoryInput): Promise<DataResult<Category>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .update({ name: input.name })
+    .eq("id", id)
+    .select("id, name")
+    .maybeSingle();
+
+  if (error) {
+    return { error: toDataError(error, "Já existe uma categoria com esse nome.") };
+  }
+  return data ? { data } : { error: CATEGORY_NOT_FOUND };
 }

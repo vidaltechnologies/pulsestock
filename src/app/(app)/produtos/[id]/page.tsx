@@ -67,7 +67,7 @@ async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
       </div>
       <ProductForm product={p} categories={categories.data} />
       <div className="max-w-2xl border-t pt-6">
-        <StatusToggleButton endpoint={`/api/products/${p.id}`} active={p.active} noun={t.products.noun} />
+        <StatusToggleButton endpoint={`/api/v1/products/${p.id}`} active={p.active} noun={t.products.noun} />
       </div>
     </div>
   );

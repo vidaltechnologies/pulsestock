@@ -61,9 +61,48 @@ O estoque é baixado quando o pedido é confirmado.
 
 | Rota | Uso |
 | --- | --- |
-| `POST /api/auth/login` | `{ email, password }` validado com Zod. 401 para credenciais erradas, 403 para usuário desativado |
-| `POST /api/auth/logout` | Encerra a sessão |
-| `GET /api/me` | Usuário logado e perfil (401 sem sessão) |
+| `POST /api/v1/auth/login` | Login das telas: `{ email, password }` validado com Zod e sessão gravada em cookie. 401 para credenciais erradas, 403 para usuário desativado |
+| `POST /api/v1/auth/token` | Login para clientes externos (Postman, outro sistema): mesmo corpo, devolve `{ tokenType, accessToken, refreshToken, expiresIn, expiresAt, user }` e não grava cookie |
+| `POST /api/v1/auth/refresh` | `{ refreshToken }` → par de tokens novo. Token inválido ou já usado → 401 `invalid_refresh_token` |
+| `POST /api/v1/auth/logout` | Encerra a sessão do cookie ou, com token, invalida o `refreshToken` dele |
+| `GET /api/v1/me` | Usuário logado e perfil (401 sem sessão) |
+
+### Token (Authorization: Bearer)
+
+Toda rota aceita o cabeçalho `Authorization: Bearer <accessToken>` no lugar do cookie. O token é o JWT do próprio Supabase Auth: o app o valida e repassa ao banco, então o RLS vale igual para quem usa as telas e para quem chama a API. Nenhuma chave secreta nova entra no projeto.
+
+```bash
+curl -X POST https://seu-app/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"voce@exemplo.com","password":"sua-senha"}'
+
+curl https://seu-app/api/v1/products?lowStock=true \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+- O `accessToken` vale `expiresIn` segundos (1 hora no padrão do Supabase). Depois, use `POST /api/v1/auth/refresh`.
+- Token inválido, expirado ou de usuário desativado → 401 `invalid_token`.
+- Usuário desativado não recebe token (403 `user_inactive`).
+
+## Convenções da API
+
+- Base: `/api/v1`. JSON na entrada e na saída.
+- Resposta de sucesso: `{ "data": ... }`. Listas: `{ "data": [...], "pagination": { "page", "pageSize", "total", "totalPages" } }`.
+- Erro: `{ "error": { "code", "message", "details"? } }`. `details` traz os erros por campo da validação. A mensagem sai no idioma de quem chamou (cookie do seletor ou `Accept-Language`).
+- Paginação: `page` (a partir de 1) e `pageSize` (1 a 100, padrão 20).
+- Ordenação: `sort=campo` (crescente) ou `sort=-campo` (decrescente), com os campos listados em cada recurso. Filtro ou ordenação inválidos caem no padrão em vez de dar erro.
+- Criação: `201 Created` com o cabeçalho `Location` do recurso novo (exceto movimentações de estoque, que são um histórico sem rota de detalhe).
+- Toda resposta leva `X-Request-Id`. Quem chama pode mandar o próprio id nesse cabeçalho.
+- Não há `DELETE`: produto, cliente e usuário são inativados com `PATCH { "active": false }`, para não perder o histórico dos pedidos.
+
+| Código | Status |
+| --- | --- |
+| `invalid_json`, `validation_error`, `invalid_data`, `invalid_reference` | 400 |
+| `unauthorized`, `invalid_token`, `invalid_credentials`, `invalid_refresh_token` | 401 |
+| `forbidden`, `user_inactive` | 403 |
+| `not_found` | 404 |
+| `conflict`, `insufficient_stock`, `inactive_product`, `invalid_transition`, `not_editable`, `self_change` | 409 |
+| `internal_error` | 500 |
 
 ## Perfis de acesso
 
@@ -89,11 +128,12 @@ Telas em `/produtos` (lista com busca por nome ou SKU, filtro por categoria e st
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/products` | Lista. Filtros: `q`, `categoryId`, `status` (`active`, `inactive`, `all`), `page`, `pageSize` (até 100) | Ambos |
-| `POST /api/products` | Cadastra. Corpo: `sku`, `name`, `salePrice` e opcionais `description`, `categoryId`, `unit`, `costPrice`, `minStock` | Admin |
-| `GET /api/products/{id}` | Detalhe | Ambos |
-| `PATCH /api/products/{id}` | Edição parcial. Inativar: `{ "active": false }` | Admin |
-| `GET /api/categories` · `POST /api/categories` | Lista e cadastra categorias (`{ "name" }`) | Ambos · Admin |
+| `GET /api/v1/products` | Lista. Filtros: `q`, `categoryId`, `status` (`active`, `inactive`, `all`), `lowStock` (`true`, `false`), `page`, `pageSize`. `sort`: `name` (padrão), `sku`, `salePrice`, `stockQuantity`, `createdAt` | Ambos |
+| `POST /api/v1/products` | Cadastra. Corpo: `sku`, `name`, `salePrice` e opcionais `description`, `categoryId`, `unit`, `costPrice`, `minStock` | Admin |
+| `GET /api/v1/products/{id}` | Detalhe | Ambos |
+| `PATCH /api/v1/products/{id}` | Edição parcial. Inativar: `{ "active": false }` | Admin |
+| `GET /api/v1/categories` · `POST /api/v1/categories` | Lista e cadastra categorias (`{ "name" }`) | Ambos · Admin |
+| `GET /api/v1/categories/{id}` · `PATCH /api/v1/categories/{id}` | Detalhe e renomeia (`{ "name" }`). Nome repetido → 409 | Ambos · Admin |
 
 - Erros seguem `{ error: { code, message, details } }`: 400 com mensagens por campo, 401, 403, 404 e 409 para SKU ou categoria repetidos.
 - O saldo (`stockQuantity`) é só leitura: o produto nasce com zero e o saldo muda pelas movimentações de estoque (etapa 5).
@@ -115,8 +155,8 @@ O saldo (`products.stock_quantity`) só muda por movimentações em `stock_movem
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/stock-movements` | Histórico. Filtros: `productId`, `type` (`in`, `out`, `adjustment`), `page`, `pageSize` | Ambos |
-| `POST /api/stock-movements` | `{ productId, type, quantity, reason? }`. Devolve a movimentação e o novo saldo. Saldo insuficiente → 409 `insufficient_stock` | Entrada: ambos · Saída e ajuste: admin |
+| `GET /api/v1/stock-movements` | Histórico. Filtros: `productId`, `type` (`in`, `out`, `adjustment`), `page`, `pageSize`. `sort`: `-createdAt` (padrão), `createdAt`, `quantity` | Ambos |
+| `POST /api/v1/stock-movements` | `{ productId, type, quantity, reason? }`. Devolve a movimentação e o novo saldo. Saldo insuficiente → 409 `insufficient_stock` | Entrada: ambos · Saída e ajuste: admin |
 
 Para conferir as regras de saldo no banco, rode `npm run db:test:stock` (22 verificações, sem gravar nada).
 
@@ -129,10 +169,10 @@ Telas em `/clientes` (lista com busca por nome, e-mail ou CPF/CNPJ e filtro de s
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/customers` | Lista. Filtros: `q`, `status` (`active`, `inactive`, `all`), `page`, `pageSize` | Ambos |
-| `POST /api/customers` | `{ name, document?, email?, phone?, city?, state? }`. Documento repetido → 409 | Ambos |
-| `GET /api/customers/{id}` | Detalhe | Ambos |
-| `PATCH /api/customers/{id}` | Edição parcial. `active` só para admin (403 para operador) | Ambos |
+| `GET /api/v1/customers` | Lista. Filtros: `q`, `status` (`active`, `inactive`, `all`), `page`, `pageSize`. `sort`: `name` (padrão), `createdAt` | Ambos |
+| `POST /api/v1/customers` | `{ name, document?, email?, phone?, city?, state? }`. Documento repetido → 409 | Ambos |
+| `GET /api/v1/customers/{id}` | Detalhe | Ambos |
+| `PATCH /api/v1/customers/{id}` | Edição parcial. `active` só para admin (403 para operador) | Ambos |
 
 ## Pedidos
 
@@ -154,11 +194,11 @@ O pedido é gravado pela função `save_order` e o status muda só por `change_o
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/orders` | Lista. Filtros: `q` (número ou cliente), `status`, `customerId`, `page`, `pageSize` | Ambos |
-| `POST /api/orders` | `{ customerId, items: [{ productId, quantity }], notes? }`. Devolve o pedido (201) | Ambos |
-| `GET /api/orders/{id}` | Detalhe com cliente e itens | Ambos |
-| `PATCH /api/orders/{id}` | Mesmo corpo do POST; substitui cliente, itens e observações. Pedido não pendente → 409 `not_editable` | Ambos |
-| `POST /api/orders/{id}/status` | `{ status }` (`confirmed`, `shipped`, `delivered`, `cancelled`). Erros 409: `insufficient_stock`, `inactive_product`, `invalid_transition` | Ambos · Cancelar: admin |
+| `GET /api/v1/orders` | Lista. Filtros: `q` (número ou cliente), `status`, `customerId`, `page`, `pageSize`. `sort`: `-number` (padrão), `number`, `createdAt`, `totalAmount` | Ambos |
+| `POST /api/v1/orders` | `{ customerId, items: [{ productId, quantity }], notes? }`. Devolve o pedido (201) | Ambos |
+| `GET /api/v1/orders/{id}` | Detalhe com cliente e itens | Ambos |
+| `PATCH /api/v1/orders/{id}` | Mesmo corpo do POST; substitui cliente, itens e observações. Pedido não pendente → 409 `not_editable` | Ambos |
+| `POST /api/v1/orders/{id}/status` | `{ status }` (`confirmed`, `shipped`, `delivered`, `cancelled`). Erros 409: `insufficient_stock`, `inactive_product`, `invalid_transition` | Ambos · Cancelar: admin |
 
 Para conferir as regras no banco, rode `npm run db:test:orders` (37 verificações, sem gravar nada).
 
@@ -173,7 +213,7 @@ A tela `/dashboard` mostra os indicadores do mês e três gráficos do período 
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/dashboard` | Indicadores e séries. Filtro: `days` (7, 30 ou 90; padrão 30) | Ambos |
+| `GET /api/v1/dashboard` | Indicadores e séries. Filtro: `days` (7, 30 ou 90; padrão 30) | Ambos |
 
 Para conferir os números no banco, rode `npm run db:test:dashboard` (28 verificações, sem gravar nada). O script cria pedidos de teste, compara o resultado com o que era antes e desfaz tudo.
 
@@ -188,8 +228,8 @@ Tela `/usuarios`, só para o administrador (o operador não vê o menu e volta a
 
 | Rota | Uso | Perfil |
 | --- | --- | --- |
-| `GET /api/users` | Lista com e-mail, perfil, status e último acesso | Admin |
-| `PATCH /api/users/{id}` | `{ fullName?, role?, active? }`. O próprio perfil ou status → 409 | Admin |
+| `GET /api/v1/users` | Lista com e-mail, perfil, status e último acesso | Admin |
+| `PATCH /api/v1/users/{id}` | `{ fullName?, role?, active? }`. O próprio perfil ou status → 409 | Admin |
 
 Para conferir as regras no banco, rode `npm run db:test:users` (22 verificações, sem gravar nada).
 

@@ -20,8 +20,20 @@ function isProtected(pathname: string) {
 // Checagem otimista: redireciona quem não está logado. A autorização de fato
 // acontece nas páginas, nos Route Handlers e no RLS do banco.
 export async function proxy(request: NextRequest) {
-  const { response, userId } = await updateSession(request);
   const { pathname, search } = request.nextUrl;
+
+  // Na API, toda resposta leva X-Request-Id para rastrear erros. Quem chama
+  // pode mandar o próprio id; senão, um novo é gerado.
+  if (pathname.startsWith("/api/")) {
+    const { response } = await updateSession(request);
+    const incoming = request.headers.get("x-request-id");
+    const requestId =
+      incoming && /^[\w.-]{1,100}$/.test(incoming) ? incoming : crypto.randomUUID();
+    response.headers.set("X-Request-Id", requestId);
+    return response;
+  }
+
+  const { response, userId } = await updateSession(request);
 
   if (!userId && isProtected(pathname)) {
     const loginUrl = new URL("/login", request.url);

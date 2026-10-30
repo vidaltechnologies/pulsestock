@@ -59,7 +59,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
 
     let response: Response;
     try {
-      response = await fetch(customer ? `/api/customers/${customer.id}` : "/api/customers", {
+      response = await fetch(customer ? `/api/v1/customers/${customer.id}` : "/api/v1/customers", {
         method: customer ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

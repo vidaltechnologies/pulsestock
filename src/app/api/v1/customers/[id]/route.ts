@@ -10,7 +10,7 @@ function notFound() {
   return apiError(404, "not_found", "Cliente não encontrado.");
 }
 
-export async function GET(_request: Request, ctx: RouteContext<"/api/customers/[id]">) {
+export async function GET(_request: Request, ctx: RouteContext<"/api/v1/customers/[id]">) {
   const { error: authError } = await requireApiUser();
   if (authError) {
     return authError;
@@ -30,7 +30,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/customers/[
 
 // Edição parcial (qualquer usuário ativo). Inativar ou reativar
 // ({ "active": false | true }) é só do administrador.
-export async function PATCH(request: Request, ctx: RouteContext<"/api/customers/[id]">) {
+export async function PATCH(request: Request, ctx: RouteContext<"/api/v1/customers/[id]">) {
   const { user, error: authError } = await requireApiUser();
   if (authError) {
     return authError;

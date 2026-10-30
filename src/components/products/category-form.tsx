@@ -29,7 +29,7 @@ export function CategoryForm() {
   async function onSubmit(values: CategoryInput) {
     let response: Response;
     try {
-      response = await fetch("/api/categories", {
+      response = await fetch("/api/v1/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),

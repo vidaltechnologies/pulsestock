@@ -90,9 +90,10 @@ describe("customerUpdateSchema", () => {
 
 describe("customerListQuerySchema", () => {
   it("usa padrões para filtros inválidos", () => {
-    expect(customerListQuerySchema.parse({ status: "x", page: "abc" })).toEqual({
+    expect(customerListQuerySchema.parse({ status: "x", page: "abc", sort: "city" })).toEqual({
       q: "",
       status: "active",
+      sort: "name",
       page: 1,
       pageSize: 20,
     });

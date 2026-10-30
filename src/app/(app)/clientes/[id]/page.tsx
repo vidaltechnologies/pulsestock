@@ -49,7 +49,7 @@ async function EditCustomer({ params }: { params: Promise<{ id: string }> }) {
       <CustomerForm customer={c} />
       {user.role === "admin" && (
         <div className="max-w-2xl border-t pt-6">
-          <StatusToggleButton endpoint={`/api/customers/${c.id}`} active={c.active} noun={t.customers.noun} />
+          <StatusToggleButton endpoint={`/api/v1/customers/${c.id}`} active={c.active} noun={t.customers.noun} />
         </div>
       )}
     </div>
