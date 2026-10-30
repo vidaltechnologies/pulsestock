@@ -106,7 +106,7 @@ npm run dev                  # http://localhost:3000
 | `npm run db:seed` | Loads the demo data into the linked project (only once) |
 | `npm run db:test:rls` (and `stock`, `orders`, `dashboard`, `users`) | Checks the rules on the linked database without saving anything |
 | `npm run test:api:setup` · `npm run test:api:serve` · `npm run test:api` | API integration tests against a local Supabase (needs Docker) |
-| `npm run postman` | Regenerates the Postman collection from the spec |
+| `npm run postman` | Regenerates the Postman collections from the spec |
 
 Users are created in the Supabase dashboard (Authentication → Users) and start as operators. The database, access rules, API routes, CI and Vercel deployment are detailed in the [technical reference](docs/referencia-tecnica.md) (in Portuguese).
 
@@ -131,18 +131,18 @@ curl -s "http://localhost:3000/api/v1/products?lowStock=true&sort=stockQuantity"
 
 ### Postman
 
-1. In Postman, use **Import** with both files from the [`postman/`](postman/) folder: the collection and the *Pulse Stock (local)* environment.
+1. In Postman, use **Import** with two files from the [`postman/`](postman/) folder: the collection in your language (`pulse-stock.en`, `.pt` or `.es.postman_collection.json`) and the *Pulse Stock (local)* environment. In each language, folders, names, descriptions and API error messages are translated.
 2. Pick the environment in the top-right corner and fill in `email` and `password`. The password stays in your Postman only.
-3. Run **Autenticação → Gera um token de acesso** (get an access token). The token is saved automatically and used by the other requests.
+3. Run **Authentication → Get an access token**. The token is saved automatically and used by the other requests.
 4. To test everything at once, run the collection in the **Collection Runner**. Each request checks the status, and the ones that create records save the id for the next ones: category, product, stock entry, customer, order and confirmation.
 
 The Runner writes real data to the database `baseUrl` points to and requests a password recovery email for your `email`. The password change only runs if you fill in `newPassword` in the environment. Postman can also import the spec straight from `/api/v1/openapi.json`.
 
-The collection is generated from the spec with `npm run postman`, and a test fails if any route is missing from it.
+The three collections are generated from the spec with `npm run postman`, and a test fails if any route or translation is missing.
 
 ### Integration tests
 
-`npm run test:api:setup` starts a disposable local Supabase (needs Docker) with test users, `npm run test:api:serve` builds and starts the app on port 3100, and `npm run test:api` runs the tests. CI does the same on every push and also runs the whole Postman collection with [Newman](https://github.com/postmanlabs/newman).
+`npm run test:api:setup` starts a disposable local Supabase (needs Docker) with test users, `npm run test:api:serve` builds and starts the app on port 3100, and `npm run test:api` runs the tests. CI does the same on every push and also runs all three Postman collections with [Newman](https://github.com/postmanlabs/newman).
 
 ## Code structure
 

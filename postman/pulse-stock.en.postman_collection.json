@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Pulse Stock API",
-    "description": "API REST do Pulse Stock, um mini ERP de estoque e pedidos de venda.\n\n**Como autenticar:** chame `POST /auth/token` com e-mail e senha, copie o `accessToken` e clique em **Authorize**. Toda rota também aceita o cookie de sessão das telas.\n\n**Convenções:** sucesso em `{ data }`; listas com `pagination`; erros em `{ error: { code, message, details? } }` no idioma do `Accept-Language` (pt, en, es). Ordenação com `sort=campo` ou `sort=-campo`. Toda resposta leva `X-Request-Id`.\n\n**Regra de negócio:** o estoque só baixa quando o pedido é confirmado.\n\n**Para começar:** escolha o ambiente *Pulse Stock (local)*, preencha `email` e `password` e rode **Gera um token de acesso**. O token fica salvo e vale para os outros requests. A coleção inteira roda no Collection Runner, na ordem das pastas.",
+    "name": "Pulse Stock API (English)",
+    "description": "Pulse Stock REST API, a mini ERP for inventory and sales orders.\n\n**Getting started:** pick the *Pulse Stock (local)* environment, fill in `email` and `password` and run **Get an access token**. The token is saved and used by the other requests. The whole collection runs in the Collection Runner, in folder order.\n\n**Conventions:** success in `{ data }`; lists with `pagination`; errors in `{ error: { code, message, details? } }`. This collection sends `Accept-Language: en`, so error messages come in English. Sorting with `sort=field` or `sort=-field`. Every response has `X-Request-Id`.\n\n**Business rule:** stock is only deducted when the order is confirmed.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -20,7 +20,10 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Sufixo único para SKU e nomes, e um CPF válido novo, a cada request.",
+          "// API error messages in English.",
+          "pm.request.headers.upsert({ key: 'Accept-Language', value: 'en' });",
+          "",
+          "// Unique suffix for SKU and names, and a new valid CPF, on every request.",
           "pm.variables.set('runId', Date.now().toString(36).toUpperCase());",
           "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
           "for (const length of [9, 10]) {",
@@ -60,11 +63,11 @@
   ],
   "item": [
     {
-      "name": "Autenticação",
-      "description": "Token para clientes externos e sessão das telas",
+      "name": "Authentication",
+      "description": "Token for external clients and the screens' session",
       "item": [
         {
-          "name": "Gera um token de acesso",
+          "name": "Get an access token",
           "event": [
             {
               "listen": "test",
@@ -73,7 +76,7 @@
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 200) {",
                   "  const body = pm.response.json();",
@@ -86,7 +89,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Troca e-mail e senha por um accessToken (JWT do Supabase Auth) e um refreshToken. Não grava cookie. Usuário desativado recebe 403 `user_inactive`.\n\nAcesso: público.",
+            "description": "Exchanges email and password for an accessToken (Supabase Auth JWT) and a refreshToken. No cookie is set. A deactivated user gets 403 `user_inactive`.\n\nAccess: public.",
             "auth": {
               "type": "noauth"
             },
@@ -118,7 +121,7 @@
           }
         },
         {
-          "name": "Renova o token",
+          "name": "Refresh the token",
           "event": [
             {
               "listen": "test",
@@ -127,7 +130,7 @@
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 200) {",
                   "  const body = pm.response.json();",
@@ -140,7 +143,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Troca o refreshToken por um par novo. Cada refreshToken vale uma vez.\n\nAcesso: público.",
+            "description": "Exchanges the refreshToken for a new pair. Each refreshToken works once.\n\nAccess: public.",
             "auth": {
               "type": "noauth"
             },
@@ -172,7 +175,7 @@
           }
         },
         {
-          "name": "Login por cookie (usado pelas telas)",
+          "name": "Cookie login (used by the screens)",
           "event": [
             {
               "listen": "test",
@@ -186,7 +189,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Grava a sessão em cookie httpOnly. Para chamar a API de fora do app, use `/auth/token`.\n\nAcesso: público.",
+            "description": "Stores the session in an httpOnly cookie. To call the API from outside the app, use `/auth/token`.\n\nAccess: public.",
             "auth": {
               "type": "noauth"
             },
@@ -218,15 +221,15 @@
           }
         },
         {
-          "name": "Pede o e-mail de recuperação de senha",
+          "name": "Request the password recovery email",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 202 (ou 429 se o Supabase limitar os e-mails)', () => {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([202,429]);",
+                  "pm.test('Status 202 (or 429 if Supabase rate-limits the emails)', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([202, 429]);",
                   "});"
                 ]
               }
@@ -234,7 +237,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Responde 202 com ou sem conta para o e-mail, para não revelar quem é usuário. O link do e-mail abre a tela de nova senha do app.\n\nAcesso: público.",
+            "description": "Answers 202 whether or not the email has an account, so the route doesn't reveal who is a user. The email link opens the app's new password screen.\n\nAccess: public.",
             "auth": {
               "type": "noauth"
             },
@@ -267,16 +270,16 @@
           }
         },
         {
-          "name": "Grava a nova senha",
+          "name": "Save the new password",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// Só troca a senha se newPassword estiver preenchido no ambiente.",
+                  "// Only changes the password if newPassword is filled in the environment.",
                   "if (!pm.variables.get('newPassword')) {",
-                  "  console.log('Troca de senha pulada: preencha newPassword no ambiente para usar.');",
+                  "  console.log('Password change skipped: fill in newPassword in the environment to use it.');",
                   "  pm.execution.skipRequest();",
                   "}"
                 ]
@@ -294,7 +297,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Usa a sessão aberta pelo link de recuperação (cookie, não token) e a encerra em seguida. Link vencido → 401 `recovery_expired`.\n\nAcesso: público.",
+            "description": "Uses the session opened by the recovery link (cookie, not token) and ends it afterwards. Expired link → 401 `recovery_expired`.\n\nAccess: public.",
             "auth": {
               "type": "noauth"
             },
@@ -327,7 +330,7 @@
           }
         },
         {
-          "name": "Usuário logado",
+          "name": "Signed-in user",
           "event": [
             {
               "listen": "test",
@@ -336,7 +339,7 @@
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 200) {",
                   "  const body = pm.response.json();",
@@ -349,7 +352,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/me",
@@ -365,11 +368,11 @@
       ]
     },
     {
-      "name": "Produtos",
-      "description": "Catálogo, preços e categorias",
+      "name": "Products",
+      "description": "Catalog, prices and categories",
       "item": [
         {
-          "name": "Lista categorias",
+          "name": "List categories",
           "event": [
             {
               "listen": "test",
@@ -383,7 +386,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/categories",
@@ -397,7 +400,7 @@
           }
         },
         {
-          "name": "Cadastra uma categoria",
+          "name": "Create a category",
           "event": [
             {
               "listen": "test",
@@ -406,7 +409,7 @@
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 201) {",
                   "  const body = pm.response.json();",
@@ -418,7 +421,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Nome repetido, sem diferenciar maiúsculas, → 409 `conflict`.\n\nAcesso: só administrador.",
+            "description": "Repeated name, case-insensitive, → 409 `conflict`.\n\nAccess: admin only.",
             "header": [
               {
                 "key": "Content-Type",
@@ -427,7 +430,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Categoria {{runId}}\"\n}",
+              "raw": "{\n  \"name\": \"Category {{runId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -446,7 +449,7 @@
           }
         },
         {
-          "name": "Detalhe da categoria",
+          "name": "Category details",
           "event": [
             {
               "listen": "test",
@@ -460,7 +463,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/categories/{{categoryId}}",
@@ -475,7 +478,7 @@
           }
         },
         {
-          "name": "Renomeia uma categoria",
+          "name": "Rename a category",
           "event": [
             {
               "listen": "test",
@@ -489,7 +492,7 @@
           ],
           "request": {
             "method": "PATCH",
-            "description": "Acesso: só administrador.",
+            "description": "Access: admin only.",
             "header": [
               {
                 "key": "Content-Type",
@@ -498,7 +501,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Categoria {{runId}}\"\n}",
+              "raw": "{\n  \"name\": \"Category {{runId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -518,7 +521,7 @@
           }
         },
         {
-          "name": "Lista produtos",
+          "name": "List products",
           "event": [
             {
               "listen": "test",
@@ -532,7 +535,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/products",
@@ -583,7 +586,7 @@
           }
         },
         {
-          "name": "Cadastra um produto",
+          "name": "Create a product",
           "event": [
             {
               "listen": "test",
@@ -592,7 +595,7 @@
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 201) {",
                   "  const body = pm.response.json();",
@@ -604,7 +607,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "O saldo começa em zero e só muda pelas movimentações de estoque. SKU repetido → 409 `conflict`.\n\nAcesso: só administrador.",
+            "description": "The balance starts at zero and only changes through stock movements. Repeated SKU → 409 `conflict`.\n\nAccess: admin only.",
             "header": [
               {
                 "key": "Content-Type",
@@ -613,7 +616,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sku\": \"API-{{runId}}\",\n  \"name\": \"Produto criado pela API\",\n  \"description\": \"Cadastrado pela coleção do Postman.\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"unit\": \"UN\",\n  \"costPrice\": 12.5,\n  \"salePrice\": 29.9,\n  \"minStock\": 5\n}",
+              "raw": "{\n  \"sku\": \"API-{{runId}}\",\n  \"name\": \"Product created by the API\",\n  \"description\": \"Created by the Postman collection.\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"unit\": \"UN\",\n  \"costPrice\": 12.5,\n  \"salePrice\": 29.9,\n  \"minStock\": 5\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -632,7 +635,7 @@
           }
         },
         {
-          "name": "Detalhe do produto",
+          "name": "Product details",
           "event": [
             {
               "listen": "test",
@@ -646,7 +649,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/products/{{productId}}",
@@ -661,7 +664,7 @@
           }
         },
         {
-          "name": "Edita um produto",
+          "name": "Edit a product",
           "event": [
             {
               "listen": "test",
@@ -675,7 +678,7 @@
           ],
           "request": {
             "method": "PATCH",
-            "description": "Edição parcial: envie só os campos que mudam. Inativar = `{ \"active\": false }`.\n\nAcesso: só administrador.",
+            "description": "Partial update: send only the fields that change. Deactivate = `{ \"active\": false }`.\n\nAccess: admin only.",
             "header": [
               {
                 "key": "Content-Type",
@@ -706,11 +709,11 @@
       ]
     },
     {
-      "name": "Estoque",
-      "description": "Entradas, saídas, ajustes e histórico",
+      "name": "Inventory",
+      "description": "Entries, exits, adjustments and history",
       "item": [
         {
-          "name": "Histórico de movimentações",
+          "name": "Movement history",
           "event": [
             {
               "listen": "test",
@@ -724,7 +727,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/stock-movements",
@@ -765,7 +768,7 @@
           }
         },
         {
-          "name": "Registra uma movimentação",
+          "name": "Record a movement",
           "event": [
             {
               "listen": "test",
@@ -779,7 +782,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Entrada (`in`): qualquer usuário. Saída (`out`) e ajuste (`adjustment`): só administrador. Saldo insuficiente → 409 `insufficient_stock` e nada é gravado.\n\nAcesso: admin e operador.",
+            "description": "Entry (`in`): any user. Exit (`out`) and adjustment (`adjustment`): admin only. Insufficient balance → 409 `insufficient_stock` and nothing is saved.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -788,7 +791,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"type\": \"in\",\n  \"quantity\": 20,\n  \"reason\": \"Entrada pela API\"\n}",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"type\": \"in\",\n  \"quantity\": 20,\n  \"reason\": \"Entry through the API\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -809,11 +812,11 @@
       ]
     },
     {
-      "name": "Clientes",
-      "description": "Cadastro de clientes com CPF ou CNPJ",
+      "name": "Customers",
+      "description": "Customers with CPF or CNPJ",
       "item": [
         {
-          "name": "Lista clientes",
+          "name": "List customers",
           "event": [
             {
               "listen": "test",
@@ -827,7 +830,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/customers",
@@ -868,7 +871,7 @@
           }
         },
         {
-          "name": "Cadastra um cliente",
+          "name": "Create a customer",
           "event": [
             {
               "listen": "test",
@@ -877,7 +880,7 @@
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 201) {",
                   "  const body = pm.response.json();",
@@ -889,7 +892,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "CPF/CNPJ repetido → 409 `conflict`.\n\nAcesso: admin e operador.",
+            "description": "Repeated CPF/CNPJ → 409 `conflict`.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -898,7 +901,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cliente {{runId}}\",\n  \"document\": \"{{cpf}}\",\n  \"email\": \"cliente@example.com\",\n  \"phone\": \"(11) 3333-4444\",\n  \"city\": \"São Paulo\",\n  \"state\": \"SP\"\n}",
+              "raw": "{\n  \"name\": \"Customer {{runId}}\",\n  \"document\": \"{{cpf}}\",\n  \"email\": \"cliente@example.com\",\n  \"phone\": \"(11) 3333-4444\",\n  \"city\": \"São Paulo\",\n  \"state\": \"SP\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -917,7 +920,7 @@
           }
         },
         {
-          "name": "Detalhe do cliente",
+          "name": "Customer details",
           "event": [
             {
               "listen": "test",
@@ -931,7 +934,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/customers/{{customerId}}",
@@ -946,7 +949,7 @@
           }
         },
         {
-          "name": "Edita um cliente",
+          "name": "Edit a customer",
           "event": [
             {
               "listen": "test",
@@ -960,7 +963,7 @@
           ],
           "request": {
             "method": "PATCH",
-            "description": "Edição parcial. Inativar ou reativar (`active`) é só do administrador.\n\nAcesso: admin e operador.",
+            "description": "Partial update. Deactivating or reactivating (`active`) is admin only.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -991,11 +994,11 @@
       ]
     },
     {
-      "name": "Pedidos",
-      "description": "Pedidos de venda e mudança de status",
+      "name": "Orders",
+      "description": "Sales orders and status changes",
       "item": [
         {
-          "name": "Lista pedidos",
+          "name": "List orders",
           "event": [
             {
               "listen": "test",
@@ -1009,7 +1012,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/orders",
@@ -1055,7 +1058,7 @@
           }
         },
         {
-          "name": "Cria um pedido pendente",
+          "name": "Create a pending order",
           "event": [
             {
               "listen": "test",
@@ -1064,7 +1067,7 @@
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "",
-                  "// Guarda no ambiente (ou na coleção, sem ambiente) para os próximos requests.",
+                  "// Saves to the environment (or the collection, with no environment) for the next requests.",
                   "const store = pm.environment.name ? pm.environment : pm.collectionVariables;",
                   "if (pm.response.code === 201) {",
                   "  const body = pm.response.json();",
@@ -1076,7 +1079,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "O preço de cada item é o preço de venda atual do produto. O estoque não muda até a confirmação.\n\nAcesso: admin e operador.",
+            "description": "Each item's price is the product's current sale price. Stock doesn't change until confirmation.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -1085,7 +1088,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"notes\": \"Pedido criado pela API\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 2\n    }\n  ]\n}",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"notes\": \"Order created by the API\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 2\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1104,7 +1107,7 @@
           }
         },
         {
-          "name": "Detalhe do pedido com cliente e itens",
+          "name": "Order details with customer and items",
           "event": [
             {
               "listen": "test",
@@ -1118,7 +1121,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: admin e operador.",
+            "description": "Access: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/orders/{{orderId}}",
@@ -1133,7 +1136,7 @@
           }
         },
         {
-          "name": "Substitui cliente, itens e observações",
+          "name": "Replace customer, items and notes",
           "event": [
             {
               "listen": "test",
@@ -1147,7 +1150,7 @@
           ],
           "request": {
             "method": "PATCH",
-            "description": "Mesmo corpo da criação. Só para pedido pendente; senão → 409 `not_editable`.\n\nAcesso: admin e operador.",
+            "description": "Same body as creation. Pending orders only; otherwise → 409 `not_editable`.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -1156,7 +1159,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"notes\": \"Pedido editado pela API\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 3\n    }\n  ]\n}",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"notes\": \"Order edited by the API\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 3\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1176,7 +1179,7 @@
           }
         },
         {
-          "name": "Muda o status do pedido",
+          "name": "Change the order status",
           "event": [
             {
               "listen": "test",
@@ -1190,7 +1193,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Confirmar (`confirmed`) baixa o estoque de todos os itens numa transação; se faltar saldo → 409 `insufficient_stock` e nada muda. Depois: `shipped` → `delivered`. Cancelar (`cancelled`) é só do administrador e devolve o estoque de pedido já confirmado. Transição inválida → 409 `invalid_transition`.\n\nAcesso: admin e operador.",
+            "description": "Confirming (`confirmed`) deducts the stock of every item in one transaction; if stock is short → 409 `insufficient_stock` and nothing changes. Then: `shipped` → `delivered`. Cancelling (`cancelled`) is admin only and returns the stock of an already confirmed order. Invalid transition → 409 `invalid_transition`.\n\nAccess: admin and operator.",
             "header": [
               {
                 "key": "Content-Type",
@@ -1223,10 +1226,10 @@
     },
     {
       "name": "Dashboard",
-      "description": "Indicadores de vendas e estoque",
+      "description": "Sales and inventory indicators",
       "item": [
         {
-          "name": "Indicadores e séries dos gráficos",
+          "name": "Indicators and chart series",
           "event": [
             {
               "listen": "test",
@@ -1240,7 +1243,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "`monthMargin` e `stockValue` vêm `null` para o operador.\n\nAcesso: admin e operador.",
+            "description": "`monthMargin` and `stockValue` are `null` for operators.\n\nAccess: admin and operator.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/dashboard",
@@ -1263,11 +1266,11 @@
       ]
     },
     {
-      "name": "Usuários",
-      "description": "Perfis de acesso (só administrador)",
+      "name": "Users",
+      "description": "Access profiles (admin only)",
       "item": [
         {
-          "name": "Lista usuários",
+          "name": "List users",
           "event": [
             {
               "listen": "test",
@@ -1281,7 +1284,7 @@
           ],
           "request": {
             "method": "GET",
-            "description": "Acesso: só administrador.",
+            "description": "Access: admin only.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/users",
@@ -1295,7 +1298,7 @@
           }
         },
         {
-          "name": "Edita nome, perfil ou status",
+          "name": "Edit name, role or status",
           "event": [
             {
               "listen": "test",
@@ -1309,7 +1312,7 @@
           ],
           "request": {
             "method": "PATCH",
-            "description": "O administrador não muda o próprio perfil nem se desativa (409 `self_change`).\n\nAcesso: só administrador.",
+            "description": "Admins can't change their own role or deactivate themselves (409 `self_change`).\n\nAccess: admin only.",
             "header": [
               {
                 "key": "Content-Type",
@@ -1340,11 +1343,11 @@
       ]
     },
     {
-      "name": "Sair",
-      "description": "Fica por último porque invalida o refreshToken. O accessToken vale até expirar.",
+      "name": "Sign out",
+      "description": "Last on purpose because it revokes the refreshToken. The accessToken stays valid until it expires.",
       "item": [
         {
-          "name": "Encerra a sessão",
+          "name": "End the session",
           "event": [
             {
               "listen": "test",
@@ -1358,7 +1361,7 @@
           ],
           "request": {
             "method": "POST",
-            "description": "Apaga a sessão do cookie ou, com token, invalida o refreshToken dele. O accessToken vale até expirar.\n\nAcesso: público.",
+            "description": "Clears the cookie session or, with a token, revokes its refreshToken. The accessToken stays valid until it expires.\n\nAccess: public.",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
