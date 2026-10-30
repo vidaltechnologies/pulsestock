@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { loginSchema } from "@/lib/validations/auth";
+import { forgotPasswordSchema, loginSchema, resetPasswordSchema } from "@/lib/validations/auth";
 import { refreshTokenSchema } from "@/lib/validations/auth-token";
 import { customerListQuerySchema, customerSchema, customerUpdateSchema } from "@/lib/validations/customer";
 import { dashboardQuerySchema } from "@/lib/validations/dashboard";
@@ -46,7 +46,8 @@ type Operation = {
   query?: z.ZodObject;
   body?: z.ZodType;
   // Esquema de `data` na resposta de sucesso; `list` devolve array + paginação.
-  response: { status: 200 | 201; schema: z.ZodType; list?: boolean; bare?: boolean };
+  // Sem esquema, a resposta não tem corpo (204).
+  response: { status: 200 | 201 | 202 | 204; schema?: z.ZodType; list?: boolean; bare?: boolean };
   errors: number[];
 };
 
@@ -95,6 +96,30 @@ const OPERATIONS: Operation[] = [
     access: "public",
     response: { status: 200, schema: OkSchema, bare: true },
     errors: [],
+  },
+  {
+    method: "post",
+    path: "/auth/password/forgot",
+    tag: "Autenticação",
+    summary: "Pede o e-mail de recuperação de senha",
+    description:
+      "Responde 202 com ou sem conta para o e-mail, para não revelar quem é usuário. O link do e-mail abre a tela de nova senha do app.",
+    access: "public",
+    body: forgotPasswordSchema,
+    response: { status: 202, schema: OkSchema, bare: true },
+    errors: [400, 429],
+  },
+  {
+    method: "post",
+    path: "/auth/password/reset",
+    tag: "Autenticação",
+    summary: "Grava a nova senha",
+    description:
+      "Usa a sessão aberta pelo link de recuperação (cookie, não token) e a encerra em seguida. Link vencido → 401 `recovery_expired`.",
+    access: "public",
+    body: resetPasswordSchema,
+    response: { status: 204 },
+    errors: [400, 401, 422],
   },
   {
     method: "get",
@@ -346,10 +371,12 @@ const OPERATIONS: Operation[] = [
 
 const ERROR_DESCRIPTIONS: Record<number, string> = {
   400: "Corpo inválido (`invalid_json`, `validation_error`, `invalid_data`, `invalid_reference`)",
-  401: "Sem sessão ou token (`unauthorized`, `invalid_token`, `invalid_credentials`, `invalid_refresh_token`)",
+  401: "Sem sessão ou token (`unauthorized`, `invalid_token`, `invalid_credentials`, `invalid_refresh_token`, `recovery_expired`)",
   403: "Perfil sem permissão (`forbidden`) ou usuário desativado (`user_inactive`)",
   404: "Não encontrado (`not_found`)",
   409: "Conflito com o estado atual (`conflict`, `insufficient_stock`, `inactive_product`, `invalid_transition`, `not_editable`, `self_change`)",
+  422: "Senha recusada (`same_password`, `weak_password`)",
+  429: "Muitos pedidos seguidos (`too_many_requests`)",
 };
 
 const ACCESS_NOTE: Record<Access, string> = {
@@ -430,21 +457,22 @@ function queryParameters(query: z.ZodObject) {
 
 function operationObject(op: Operation) {
   const { status, schema, list, bare } = op.response;
-  const data = list ? { type: "array", items: ref(schema) } : ref(schema);
-  const successBody = bare
-    ? ref(schema)
-    : {
-        type: "object",
-        properties: list
-          ? { data, pagination: { $ref: "#/components/schemas/Pagination" } }
-          : { data },
-        required: list ? ["data", "pagination"] : ["data"],
-      };
-
   const success: Record<string, unknown> = {
-    description: status === 201 ? "Criado" : "Sucesso",
-    content: { "application/json": { schema: successBody } },
+    description: { 201: "Criado", 202: "Aceito", 204: "Sem conteúdo" }[status as number] ?? "Sucesso",
   };
+  if (schema) {
+    const data = list ? { type: "array", items: ref(schema) } : ref(schema);
+    const body = bare
+      ? ref(schema)
+      : {
+          type: "object",
+          properties: list
+            ? { data, pagination: { $ref: "#/components/schemas/Pagination" } }
+            : { data },
+          required: list ? ["data", "pagination"] : ["data"],
+        };
+    success.content = { "application/json": { schema: body } };
+  }
   if (status === 201 && op.path !== "/stock-movements") {
     success.headers = {
       Location: { description: "URL do recurso criado", schema: { type: "string" } },

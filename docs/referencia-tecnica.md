@@ -115,10 +115,12 @@ A documentação interativa fica em **`/api/docs`** (Swagger UI): dá para gerar
 | Código | Status |
 | --- | --- |
 | `invalid_json`, `validation_error`, `invalid_data`, `invalid_reference` | 400 |
-| `unauthorized`, `invalid_token`, `invalid_credentials`, `invalid_refresh_token` | 401 |
+| `unauthorized`, `invalid_token`, `invalid_credentials`, `invalid_refresh_token`, `recovery_expired` | 401 |
 | `forbidden`, `user_inactive` | 403 |
 | `not_found` | 404 |
 | `conflict`, `insufficient_stock`, `inactive_product`, `invalid_transition`, `not_editable`, `self_change` | 409 |
+| `same_password`, `weak_password` | 422 |
+| `too_many_requests` | 429 |
 | `internal_error` | 500 |
 
 ## Perfis de acesso
