@@ -86,14 +86,16 @@ jobs:
           exit 1
       - name: Testes de integração
         run: npm run test:api
-      # A coleção inteira no Newman (o Collection Runner do Postman em linha de comando).
-      - name: Coleção do Postman
-        run: >
-          npx --yes newman@6.2.3 run postman/pulse-stock.postman_collection.json
-          -e postman/pulse-stock.postman_environment.json
-          --env-var baseUrl=http://localhost:3100/api/v1
-          --env-var email=admin@api-test.local
-          --env-var password=api-test-123456
+      # As três coleções (pt, en, es) no Newman, o Collection Runner do Postman em linha de comando.
+      - name: Coleções do Postman
+        run: |
+          for language in pt en es; do
+            npx --yes newman@6.2.3 run "postman/pulse-stock.$language.postman_collection.json" \
+              -e postman/pulse-stock.postman_environment.json \
+              --env-var baseUrl=http://localhost:3100/api/v1 \
+              --env-var email=admin@api-test.local \
+              --env-var password=api-test-123456
+          done
       - name: Log do app
         if: failure()
         run: cat app.log

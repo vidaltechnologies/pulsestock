@@ -103,7 +103,7 @@ curl https://seu-app/api/v1/products?lowStock=true \
 
 A documentação interativa fica em **`/api/docs`** (Swagger UI): dá para gerar o token, clicar em **Authorize** e testar cada rota no navegador. A especificação OpenAPI 3.1 está em `/api/v1/openapi.json` e pode ser importada no Postman (Import → Link). Ela é gerada em `src/lib/openapi/` a partir dos mesmos esquemas Zod que validam as requisições, e `openapi.test.ts` falha se uma rota existir sem documentação ou se o formato de uma resposta mudar sem a documentação mudar junto.
 
-A coleção do Postman em `postman/` sai da mesma especificação (`src/lib/openapi/postman.ts`, gravada por `npm run postman`). Cada request tem corpo de exemplo e teste de status; o de token e os de cadastro guardam `accessToken` e os ids para os seguintes, então a coleção roda inteira no Collection Runner. `postman.test.ts` falha se o arquivo estiver desatualizado, se faltar alguma rota ou se um corpo de exemplo não passar na validação. A troca de senha (`/auth/password/reset`) só roda com `newPassword` preenchido no ambiente, porque vale para qualquer sessão aberta, e o logout fica por último.
+As coleções do Postman em `postman/`, uma por idioma (pt, en, es), saem da mesma especificação (`src/lib/openapi/postman.ts`, com as traduções em `postman-i18n.ts`, gravadas por `npm run postman`). Cada uma manda `Accept-Language` no seu idioma, então os erros da API vêm traduzidos. Cada request tem corpo de exemplo e teste de status; o de token e os de cadastro guardam `accessToken` e os ids para os seguintes, então a coleção roda inteira no Collection Runner. `postman.test.ts` falha se um arquivo estiver desatualizado, se faltar alguma rota ou tradução ou se um corpo de exemplo não passar na validação. A troca de senha (`/auth/password/reset`) só roda com `newPassword` preenchido no ambiente, porque vale para qualquer sessão aberta, e o logout fica por último.
 
 - Base: `/api/v1`. JSON na entrada e na saída.
 - Resposta de sucesso: `{ "data": ... }`. Listas: `{ "data": [...], "pagination": { "page", "pageSize", "total", "totalPages" } }`.
@@ -260,7 +260,7 @@ O workflow `.github/workflows/ci.yml` roda em cada pull request e em cada push n
 
 1. **App:** `npm ci`, lint, typecheck, testes unitários e build.
 2. **Banco:** sobe o Postgres local do Supabase no runner, aplica todas as migrações, cria um administrador de teste, carrega os dados de demonstração e roda as cinco verificações (`supabase/tests/*_check.sql`). Qualquer verificação que falhar derruba o job.
-3. **API:** sobe um Supabase local completo (banco, login e API REST), cria um administrador e um operador de teste, carrega os dados de demonstração, compila e liga o app e roda os testes de integração em `tests/api/` contra a API de verdade, com token. Depois roda a coleção do Postman inteira com o Newman, como administrador.
+3. **API:** sobe um Supabase local completo (banco, login e API REST), cria um administrador e um operador de teste, carrega os dados de demonstração, compila e liga o app e roda os testes de integração em `tests/api/` contra a API de verdade, com token. Depois roda as três coleções do Postman inteiras com o Newman, como administrador.
 
 ### Testes de integração da API
 
@@ -308,7 +308,7 @@ As telas principais (login, dashboard, produtos, estoque, clientes, pedidos e us
 | `npm run typecheck` | Gera os tipos de rota do Next.js e roda o TypeScript |
 | `npm test` | Testes unitários (Vitest) |
 | `npm run test:api:setup` / `test:api:serve` / `test:api` | Testes de integração da API contra um Supabase local (veja acima) |
-| `npm run postman` | Gera de novo a coleção e o ambiente do Postman a partir da especificação |
+| `npm run postman` | Gera de novo as coleções (pt, en, es) e o ambiente do Postman a partir da especificação |
 | `npm run db:start` / `db:stop` | Sobe ou para o Supabase local |
 | `npm run db:reset` | Recria o banco local com as migrações |
 | `npm run db:test:rls` | Verifica as regras de acesso no projeto vinculado (sem gravar nada) |

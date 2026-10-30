@@ -106,7 +106,7 @@ npm run dev                  # http://localhost:3000
 | `npm run db:seed` | Carrega os dados de demonstração no projeto vinculado (uma vez só) |
 | `npm run db:test:rls` (e `stock`, `orders`, `dashboard`, `users`) | Verifica as regras no banco vinculado, sem gravar nada |
 | `npm run test:api:setup` · `npm run test:api:serve` · `npm run test:api` | Testes de integração da API contra um Supabase local (precisa de Docker) |
-| `npm run postman` | Gera de novo a coleção do Postman a partir da especificação |
+| `npm run postman` | Gera de novo as coleções do Postman a partir da especificação |
 
 Os usuários são criados no painel do Supabase (Authentication → Users) e nascem como operador. Banco, regras de acesso, rotas da API, CI e deploy na Vercel estão detalhados na [referência técnica](docs/referencia-tecnica.md).
 
@@ -131,18 +131,18 @@ curl -s "http://localhost:3000/api/v1/products?lowStock=true&sort=stockQuantity"
 
 ### Postman
 
-1. No Postman, use **Import** com os dois arquivos da pasta [`postman/`](postman/): a coleção e o ambiente *Pulse Stock (local)*.
+1. No Postman, use **Import** com dois arquivos da pasta [`postman/`](postman/): a coleção no seu idioma (`pulse-stock.pt`, `.en` ou `.es.postman_collection.json`) e o ambiente *Pulse Stock (local)*. Em cada idioma, pastas, nomes, descrições e mensagens de erro da API vêm traduzidos.
 2. Escolha o ambiente no canto superior direito e preencha `email` e `password`. A senha fica só no seu Postman.
 3. Rode **Autenticação → Gera um token de acesso**. O token é salvo sozinho e vale para os outros requests.
 4. Para testar tudo de uma vez, rode a coleção no **Collection Runner**. Cada request confere o status, e os que cadastram guardam o id para os seguintes: categoria, produto, entrada de estoque, cliente, pedido e confirmação.
 
 O Runner grava dados de verdade no banco para onde `baseUrl` aponta e pede um e-mail de recuperação de senha para o seu `email`. A troca de senha só roda se você preencher `newPassword` no ambiente. O Postman também importa a especificação direto de `/api/v1/openapi.json`.
 
-A coleção é gerada a partir da especificação com `npm run postman`, e um teste falha se alguma rota ficar de fora.
+As três coleções são geradas a partir da especificação com `npm run postman`, e um teste falha se alguma rota ou tradução ficar de fora.
 
 ### Testes de integração
 
-`npm run test:api:setup` sobe um Supabase local descartável (precisa de Docker) com usuários de teste, `npm run test:api:serve` compila e sobe o app na porta 3100 e `npm run test:api` roda os testes. O CI faz o mesmo a cada push e ainda roda a coleção do Postman inteira com o [Newman](https://github.com/postmanlabs/newman).
+`npm run test:api:setup` sobe um Supabase local descartável (precisa de Docker) com usuários de teste, `npm run test:api:serve` compila e sobe o app na porta 3100 e `npm run test:api` roda os testes. O CI faz o mesmo a cada push e ainda roda as três coleções do Postman inteiras com o [Newman](https://github.com/postmanlabs/newman).
 
 ## Estrutura do código
 

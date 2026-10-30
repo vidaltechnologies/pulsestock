@@ -516,7 +516,7 @@ function operationObject(op: Operation) {
   };
 }
 
-export const API_OPERATIONS = OPERATIONS.map(({ method, path, body }) => ({ method, path, body }));
+export const API_OPERATIONS = OPERATIONS.map(({ method, path, body, access }) => ({ method, path, body, access }));
 
 export function buildOpenApiSpec() {
   const paths: Record<string, Record<string, unknown>> = {};
