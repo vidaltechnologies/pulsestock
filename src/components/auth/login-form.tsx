@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,8 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(() =>
     searchParams.get("motivo") === "desativado" ? "deactivated" : null,
   );
+  // Volta da tela de nova senha.
+  const passwordChanged = searchParams.get("motivo") === "senha-alterada";
 
   const {
     register,
@@ -84,7 +87,15 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">{t.login.password}</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="password">{t.login.password}</Label>
+          <Link
+            href="/esqueci-senha"
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {t.login.forgotPassword}
+          </Link>
+        </div>
         <Input
           id="password"
           type="password"
@@ -99,6 +110,15 @@ export function LoginForm() {
           </p>
         )}
       </div>
+
+      {passwordChanged && !formError && (
+        <p
+          role="status"
+          className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm"
+        >
+          {t.login.passwordChanged}
+        </p>
+      )}
 
       {formError && (
         <p

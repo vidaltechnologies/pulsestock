@@ -244,6 +244,12 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Link de recuperação de senha para /auth/confirm (token_hash), que funciona
+# em qualquer navegador. O modelo da nuvem é o mesmo, colado no painel.
+[auth.email.template.recovery]
+subject = "Redefinir sua senha do Pulse Stock"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

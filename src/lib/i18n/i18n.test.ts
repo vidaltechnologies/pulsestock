@@ -4,7 +4,12 @@ import type { z } from "zod";
 import { getFormat } from "@/lib/format";
 import { getDictionary, translateMessage } from "@/lib/i18n";
 import { localeFromAcceptLanguage } from "@/lib/i18n/config";
-import { loginSchema } from "@/lib/validations/auth";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordFormSchema,
+  resetPasswordSchema,
+} from "@/lib/validations/auth";
 import { refreshTokenSchema } from "@/lib/validations/auth-token";
 import { customerSchema } from "@/lib/validations/customer";
 import { orderSchema, orderStatusChangeSchema } from "@/lib/validations/order";
@@ -63,6 +68,12 @@ describe("mensagens de validação", () => {
   const invalid: [z.ZodType, unknown][] = [
     [loginSchema, {}],
     [loginSchema, { email: "x", password: "a".repeat(80) }],
+    [forgotPasswordSchema, {}],
+    [forgotPasswordSchema, { email: "x" }],
+    [resetPasswordSchema, {}],
+    [resetPasswordFormSchema, { password: "curta" }],
+    [resetPasswordFormSchema, { password: "a".repeat(80), confirmPassword: "b" }],
+    [resetPasswordFormSchema, { password: "senha-boa-1", confirmPassword: "outra-senha" }],
     [refreshTokenSchema, {}],
     [refreshTokenSchema, { refreshToken: " " }],
     [productSchema, {}],

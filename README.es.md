@@ -48,6 +48,7 @@ Las reglas que no pueden fallar viven en PostgreSQL, no solo en la pantalla: per
 - **Pedidos de venta:** ítems con precio congelado, total automático, flujo pendiente → confirmado → enviado → entregado y cancelación que devuelve el inventario.
 - **Panel:** ventas, pedidos y ticket promedio del mes, gráficos de ventas por día, más vendidos y pedidos por estado, en periodos de 7, 30 o 90 días. El margen y el valor del inventario solo los ve el administrador.
 - **Usuarios:** el administrador cambia perfiles y activa o desactiva cuentas; quien es desactivado pierde el acceso al instante.
+- **Recuperación de contraseña:** enlace "¿Olvidaste tu contraseña?" en el inicio de sesión, correo con enlace de un solo uso y pantalla para crear la nueva contraseña.
 - **API REST:** rutas para productos, inventario, clientes, pedidos, panel y usuarios, con validación en Zod y errores estandarizados.
 - **Datos de demostración:** 16 productos, 10 clientes y unos 110 pedidos de los últimos 60 días, creados con las mismas funciones de la aplicación.
 - **Tres idiomas:** portugués, inglés y español, elegidos con las banderas en la parte superior de la pantalla. Textos, mensajes de error, números y fechas cambian juntos; en la primera visita se usa el idioma del navegador.

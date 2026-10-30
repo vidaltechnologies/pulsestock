@@ -21,6 +21,8 @@ export const en: Dictionary = {
     editOrder: "Edit order",
     users: "Users",
     login: "Sign in",
+    forgotPassword: "Forgot password",
+    resetPassword: "New password",
   },
 
   common: {
@@ -112,6 +114,27 @@ export const en: Dictionary = {
     submit: "Sign in",
     deactivated: "Your access has been deactivated. Contact an administrator.",
     error: "Could not sign in. Please try again.",
+    forgotPassword: "Forgot your password?",
+    passwordChanged: "Password changed. Sign in with your new password.",
+  },
+
+  forgotPassword: {
+    title: "Reset password",
+    description: "Enter your account's email. We'll send you a link to create a new password.",
+    submit: "Send link",
+    sent: "If that email has an account, we've sent a link to reset the password. It's valid for 1 hour.",
+    invalidLink: "The link is invalid, already used or expired. Request a new one below.",
+    backToLogin: "Back to sign in",
+  },
+
+  resetPassword: {
+    title: "New password",
+    description: "Choose a password with at least 8 characters.",
+    password: "New password",
+    confirmPassword: "Confirm new password",
+    submit: "Save new password",
+    expired: "Your recovery link has expired or was already used.",
+    requestNew: "Request a new link",
   },
 
   dashboard: {
@@ -334,6 +357,14 @@ export const en: Dictionary = {
     emailValid: "Enter a valid email.",
     passwordRequired: "Enter your password.",
     passwordMax: "The password can have at most 72 characters.",
+    newPasswordRequired: "Enter the new password.",
+    passwordMin: "Use at least 8 characters.",
+    confirmPasswordRequired: "Confirm the new password.",
+    passwordsMismatch: "The passwords don't match.",
+    samePassword: "The new password must be different from the current one.",
+    weakPassword: "This password is too weak. Choose another one.",
+    recoveryExpired: "Your recovery link has expired or was already used. Request a new one.",
+    tooManyRequests: "Too many requests in a row. Wait a few minutes and try again.",
     costPriceRequired: "Enter the cost price.",
     costPriceNegative: "The cost price can't be negative.",
     salePriceRequired: "Enter the sale price.",
