@@ -134,6 +134,45 @@ const OPERATIONS: Operation[] = [
   // Produtos e categorias
   {
     method: "get",
+    path: "/categories",
+    tag: "Produtos",
+    summary: "Lista categorias",
+    access: "user",
+    response: { status: 200, schema: z.array(CategorySchema) },
+    errors: [401],
+  },
+  {
+    method: "post",
+    path: "/categories",
+    tag: "Produtos",
+    summary: "Cadastra uma categoria",
+    description: "Nome repetido, sem diferenciar maiúsculas, → 409 `conflict`.",
+    access: "admin",
+    body: categorySchema,
+    response: { status: 201, schema: CategorySchema },
+    errors: [400, 401, 403, 409],
+  },
+  {
+    method: "get",
+    path: "/categories/{id}",
+    tag: "Produtos",
+    summary: "Detalhe da categoria",
+    access: "user",
+    response: { status: 200, schema: CategorySchema },
+    errors: [401, 404],
+  },
+  {
+    method: "patch",
+    path: "/categories/{id}",
+    tag: "Produtos",
+    summary: "Renomeia uma categoria",
+    access: "admin",
+    body: categorySchema,
+    response: { status: 200, schema: CategorySchema },
+    errors: [400, 401, 403, 404, 409],
+  },
+  {
+    method: "get",
     path: "/products",
     tag: "Produtos",
     summary: "Lista produtos",
@@ -171,45 +210,6 @@ const OPERATIONS: Operation[] = [
     access: "admin",
     body: productUpdateSchema,
     response: { status: 200, schema: ProductSchema },
-    errors: [400, 401, 403, 404, 409],
-  },
-  {
-    method: "get",
-    path: "/categories",
-    tag: "Produtos",
-    summary: "Lista categorias",
-    access: "user",
-    response: { status: 200, schema: z.array(CategorySchema) },
-    errors: [401],
-  },
-  {
-    method: "post",
-    path: "/categories",
-    tag: "Produtos",
-    summary: "Cadastra uma categoria",
-    description: "Nome repetido, sem diferenciar maiúsculas, → 409 `conflict`.",
-    access: "admin",
-    body: categorySchema,
-    response: { status: 201, schema: CategorySchema },
-    errors: [400, 401, 403, 409],
-  },
-  {
-    method: "get",
-    path: "/categories/{id}",
-    tag: "Produtos",
-    summary: "Detalhe da categoria",
-    access: "user",
-    response: { status: 200, schema: CategorySchema },
-    errors: [401, 404],
-  },
-  {
-    method: "patch",
-    path: "/categories/{id}",
-    tag: "Produtos",
-    summary: "Renomeia uma categoria",
-    access: "admin",
-    body: categorySchema,
-    response: { status: 200, schema: CategorySchema },
     errors: [400, 401, 403, 404, 409],
   },
 
@@ -516,7 +516,7 @@ function operationObject(op: Operation) {
   };
 }
 
-export const API_OPERATIONS = OPERATIONS.map(({ method, path }) => ({ method, path }));
+export const API_OPERATIONS = OPERATIONS.map(({ method, path, body }) => ({ method, path, body }));
 
 export function buildOpenApiSpec() {
   const paths: Record<string, Record<string, unknown>> = {};

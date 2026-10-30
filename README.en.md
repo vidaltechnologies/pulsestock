@@ -49,7 +49,7 @@ The rules that must never fail live in PostgreSQL, not only in the UI: role-base
 - **Dashboard:** the month's sales, orders and average ticket, charts of daily sales, best sellers and orders by status, for 7, 30 or 90 days. Margin and inventory value are shown only to the admin.
 - **Users:** the admin changes roles and activates or deactivates accounts; a deactivated user loses access immediately.
 - **Password recovery:** a "Forgot your password?" link on the sign-in screen, an email with a single-use link and a screen to set the new password.
-- **REST API:** routes for products, inventory, customers, orders, dashboard and users, validated with Zod and with standard error responses.
+- **REST API:** versioned routes under `/api/v1` for products, inventory, customers, orders, dashboard and users, with Bearer tokens, Zod validation, standard error responses, OpenAPI docs and a Postman collection. See the [API](#api) section.
 - **Demo data:** 16 products, 10 customers and about 110 orders from the last 60 days, created through the same functions the app uses.
 - **Three languages:** Portuguese, English and Spanish, picked with the flags at the top of the screen. Text, error messages, numbers and dates all change; on a first visit the browser language is used.
 
@@ -80,8 +80,9 @@ The rules that must never fail live in PostgreSQL, not only in the UI: role-base
 | Supabase (PostgreSQL + Auth) | Database, login, RLS, triggers and functions |
 | Zod + React Hook Form | Validation shared by forms and API |
 | Recharts | Dashboard charts |
-| Vitest | Unit tests for the validations |
-| GitHub Actions | CI: lint, types, tests, build and database checks |
+| OpenAPI 3.1 + Swagger UI | API documentation, generated from the Zod schemas |
+| Vitest | Unit tests and API integration tests |
+| GitHub Actions | CI: lint, types, tests, build, database checks and API tests |
 
 ## Running it on your computer
 
@@ -104,8 +105,44 @@ npm run dev                  # http://localhost:3000
 | `npx supabase db push` | Applies the migrations to the linked cloud project |
 | `npm run db:seed` | Loads the demo data into the linked project (only once) |
 | `npm run db:test:rls` (and `stock`, `orders`, `dashboard`, `users`) | Checks the rules on the linked database without saving anything |
+| `npm run test:api:setup` · `npm run test:api:serve` · `npm run test:api` | API integration tests against a local Supabase (needs Docker) |
+| `npm run postman` | Regenerates the Postman collection from the spec |
 
 Users are created in the Supabase dashboard (Authentication → Users) and start as operators. The database, access rules, API routes, CI and Vercel deployment are detailed in the [technical reference](docs/referencia-tecnica.md) (in Portuguese).
+
+## API
+
+The app has its own REST API under `/api/v1`. Supabase sits behind it as the database and login: API clients never talk to it directly, and the same database access rules apply to every call.
+
+- **Interactive docs:** [`/api/docs`](http://localhost:3000/api/docs) (Swagger UI), with the OpenAPI 3.1 spec at `/api/v1/openapi.json`. It comes from the same Zod schemas that validate the requests.
+- **Authentication:** `POST /api/v1/auth/token` exchanges email and password for an `accessToken`, sent in the `Authorization: Bearer` header. When it expires, `POST /api/v1/auth/refresh` with the `refreshToken` issues a new one.
+- **Conventions:** success in `{ "data": ... }`, lists with `pagination`, errors in `{ "error": { "code", "message" } }` in the `Accept-Language` language, sorting with `sort=field` or `sort=-field`, and `X-Request-Id` on every response.
+
+```bash
+# 1. Get a token
+curl -s -X POST http://localhost:3000/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"your-password"}'
+
+# 2. Use the accessToken from the response: low-stock products, lowest balance first
+curl -s "http://localhost:3000/api/v1/products?lowStock=true&sort=stockQuantity" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+### Postman
+
+1. In Postman, use **Import** with both files from the [`postman/`](postman/) folder: the collection and the *Pulse Stock (local)* environment.
+2. Pick the environment in the top-right corner and fill in `email` and `password`. The password stays in your Postman only.
+3. Run **Autenticação → Gera um token de acesso** (get an access token). The token is saved automatically and used by the other requests.
+4. To test everything at once, run the collection in the **Collection Runner**. Each request checks the status, and the ones that create records save the id for the next ones: category, product, stock entry, customer, order and confirmation.
+
+The Runner writes real data to the database `baseUrl` points to and requests a password recovery email for your `email`. The password change only runs if you fill in `newPassword` in the environment. Postman can also import the spec straight from `/api/v1/openapi.json`.
+
+The collection is generated from the spec with `npm run postman`, and a test fails if any route is missing from it.
+
+### Integration tests
+
+`npm run test:api:setup` starts a disposable local Supabase (needs Docker) with test users, `npm run test:api:serve` builds and starts the app on port 3100, and `npm run test:api` runs the tests. CI does the same on every push and also runs the whole Postman collection with [Newman](https://github.com/postmanlabs/newman).
 
 ## Code structure
 
@@ -115,11 +152,12 @@ pulsestock/
 │   ├── app/
 │   │   ├── (app)/          # signed-in screens: dashboard, products, inventory, customers, orders, users
 │   │   ├── (auth)/login/   # login screen
-│   │   ├── api/            # REST routes (Route Handlers)
+│   │   ├── api/            # REST API v1 (Route Handlers) and docs at /api/docs
 │   │   └── sair/           # signs out a deactivated user
 │   ├── components/         # components per module and shadcn/ui components
 │   ├── lib/
 │   │   ├── data/           # Supabase access per module
+│   │   ├── openapi/        # OpenAPI spec and Postman collection
 │   │   ├── supabase/       # Supabase clients (server and browser)
 │   │   └── validations/    # Zod schemas and tests
 │   ├── types/              # types generated from the database
@@ -128,6 +166,9 @@ pulsestock/
 │   ├── migrations/         # schema, RLS, inventory, orders, dashboard and users
 │   ├── tests/              # SQL checks of the business rules
 │   └── seed.sql            # demo data
+├── postman/                # Postman collection and environment
+├── scripts/                # local Supabase and app for the API tests
+├── tests/api/              # API integration tests
 ├── docs/                   # icon, screenshots and technical reference
 └── .github/workflows/      # CI
 ```

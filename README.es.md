@@ -49,7 +49,7 @@ Las reglas que no pueden fallar viven en PostgreSQL, no solo en la pantalla: per
 - **Panel:** ventas, pedidos y ticket promedio del mes, gráficos de ventas por día, más vendidos y pedidos por estado, en periodos de 7, 30 o 90 días. El margen y el valor del inventario solo los ve el administrador.
 - **Usuarios:** el administrador cambia perfiles y activa o desactiva cuentas; quien es desactivado pierde el acceso al instante.
 - **Recuperación de contraseña:** enlace "¿Olvidaste tu contraseña?" en el inicio de sesión, correo con enlace de un solo uso y pantalla para crear la nueva contraseña.
-- **API REST:** rutas para productos, inventario, clientes, pedidos, panel y usuarios, con validación en Zod y errores estandarizados.
+- **API REST:** rutas versionadas en `/api/v1` para productos, inventario, clientes, pedidos, panel y usuarios, con token Bearer, validación en Zod, errores estandarizados, documentación OpenAPI y colección de Postman. Consulta la sección [API](#api).
 - **Datos de demostración:** 16 productos, 10 clientes y unos 110 pedidos de los últimos 60 días, creados con las mismas funciones de la aplicación.
 - **Tres idiomas:** portugués, inglés y español, elegidos con las banderas en la parte superior de la pantalla. Textos, mensajes de error, números y fechas cambian juntos; en la primera visita se usa el idioma del navegador.
 
@@ -80,8 +80,9 @@ Las reglas que no pueden fallar viven en PostgreSQL, no solo en la pantalla: per
 | Supabase (PostgreSQL + Auth) | Base de datos, inicio de sesión, RLS, disparadores y funciones |
 | Zod + React Hook Form | Validación compartida entre formularios y API |
 | Recharts | Gráficos del panel |
-| Vitest | Pruebas unitarias de las validaciones |
-| GitHub Actions | CI: lint, tipos, pruebas, build y verificaciones de la base de datos |
+| OpenAPI 3.1 + Swagger UI | Documentación de la API, generada de los esquemas Zod |
+| Vitest | Pruebas unitarias y pruebas de integración de la API |
+| GitHub Actions | CI: lint, tipos, pruebas, build, verificaciones de la base de datos y pruebas de la API |
 
 ## Cómo ejecutarlo en tu computadora
 
@@ -104,8 +105,44 @@ npm run dev                  # http://localhost:3000
 | `npx supabase db push` | Aplica las migraciones al proyecto vinculado en la nube |
 | `npm run db:seed` | Carga los datos de demostración en el proyecto vinculado (una sola vez) |
 | `npm run db:test:rls` (y `stock`, `orders`, `dashboard`, `users`) | Verifica las reglas en la base vinculada, sin guardar nada |
+| `npm run test:api:setup` · `npm run test:api:serve` · `npm run test:api` | Pruebas de integración de la API contra un Supabase local (requiere Docker) |
+| `npm run postman` | Vuelve a generar la colección de Postman a partir de la especificación |
 
 Los usuarios se crean en el panel de Supabase (Authentication → Users) y empiezan como operadores. La base de datos, las reglas de acceso, las rutas de la API, la CI y el despliegue en Vercel están detallados en la [referencia técnica](docs/referencia-tecnica.md) (en portugués).
+
+## API
+
+La app tiene su propia API REST en `/api/v1`. Supabase queda detrás, como base de datos y login: quien usa la API no habla con él directamente, y las mismas reglas de acceso de la base valen para cada llamada.
+
+- **Documentación interactiva:** [`/api/docs`](http://localhost:3000/api/docs) (Swagger UI), con la especificación OpenAPI 3.1 en `/api/v1/openapi.json`. Sale de los mismos esquemas Zod que validan las solicitudes.
+- **Autenticación:** `POST /api/v1/auth/token` cambia correo y contraseña por un `accessToken`, que va en el encabezado `Authorization: Bearer`. Cuando vence, `POST /api/v1/auth/refresh` con el `refreshToken` genera otro.
+- **Convenciones:** éxito en `{ "data": ... }`, listas con `pagination`, errores en `{ "error": { "code", "message" } }` en el idioma del `Accept-Language`, orden con `sort=campo` o `sort=-campo` y `X-Request-Id` en cada respuesta.
+
+```bash
+# 1. Genera el token
+curl -s -X POST http://localhost:3000/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"tu@ejemplo.com","password":"tu-contraseña"}'
+
+# 2. Usa el accessToken de la respuesta: productos con inventario bajo, del menor saldo al mayor
+curl -s "http://localhost:3000/api/v1/products?lowStock=true&sort=stockQuantity" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+### Postman
+
+1. En Postman, usa **Import** con los dos archivos de la carpeta [`postman/`](postman/): la colección y el entorno *Pulse Stock (local)*.
+2. Elige el entorno en la esquina superior derecha y completa `email` y `password`. La contraseña queda solo en tu Postman.
+3. Ejecuta **Autenticação → Gera um token de acesso** (generar token). El token se guarda solo y sirve para las demás solicitudes.
+4. Para probar todo de una vez, ejecuta la colección en el **Collection Runner**. Cada solicitud verifica el estado, y las que crean registros guardan el id para las siguientes: categoría, producto, entrada de inventario, cliente, pedido y confirmación.
+
+El Runner graba datos reales en la base a la que apunta `baseUrl` y pide un correo de recuperación de contraseña para tu `email`. El cambio de contraseña solo se ejecuta si completas `newPassword` en el entorno. Postman también importa la especificación directamente de `/api/v1/openapi.json`.
+
+La colección se genera a partir de la especificación con `npm run postman`, y una prueba falla si alguna ruta queda fuera.
+
+### Pruebas de integración
+
+`npm run test:api:setup` inicia un Supabase local desechable (requiere Docker) con usuarios de prueba, `npm run test:api:serve` compila e inicia la app en el puerto 3100 y `npm run test:api` ejecuta las pruebas. La CI hace lo mismo en cada push y además ejecuta toda la colección de Postman con [Newman](https://github.com/postmanlabs/newman).
 
 ## Estructura del código
 
@@ -115,11 +152,12 @@ pulsestock/
 │   ├── app/
 │   │   ├── (app)/          # pantallas con sesión: panel, productos, inventario, clientes, pedidos, usuarios
 │   │   ├── (auth)/login/   # pantalla de inicio de sesión
-│   │   ├── api/            # rutas REST (Route Handlers)
+│   │   ├── api/            # API REST v1 (Route Handlers) y documentación en /api/docs
 │   │   └── sair/           # cierra la sesión de un usuario desactivado
 │   ├── components/         # componentes por módulo y componentes shadcn/ui
 │   ├── lib/
 │   │   ├── data/           # acceso a Supabase por módulo
+│   │   ├── openapi/        # especificación OpenAPI y colección de Postman
 │   │   ├── supabase/       # clientes de Supabase (servidor y navegador)
 │   │   └── validations/    # esquemas Zod y pruebas
 │   ├── types/              # tipos generados de la base de datos
@@ -128,6 +166,9 @@ pulsestock/
 │   ├── migrations/         # esquema, RLS, inventario, pedidos, panel y usuarios
 │   ├── tests/              # verificaciones SQL de las reglas de negocio
 │   └── seed.sql            # datos de demostración
+├── postman/                # colección y entorno de Postman
+├── scripts/                # Supabase local y app para las pruebas de la API
+├── tests/api/              # pruebas de integración de la API
 ├── docs/                   # ícono, pantallas y referencia técnica
 └── .github/workflows/      # CI
 ```
