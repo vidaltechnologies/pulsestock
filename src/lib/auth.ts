@@ -3,6 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { setMonitoringUser } from "@/lib/monitoring/report";
 import { createClient, getBearerToken } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -37,6 +38,9 @@ const getSession = cache(async (): Promise<{ signedIn: boolean; user: CurrentUse
   if (!profile?.active) {
     return { signedIn: true, user: null };
   }
+
+  // Erros desta requisição no Sentry levam o id e o perfil (nada de e-mail).
+  setMonitoringUser({ id: claims.sub, role: profile.role });
 
   return {
     signedIn: true,

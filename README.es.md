@@ -81,6 +81,7 @@ Las reglas que no pueden fallar viven en PostgreSQL, no solo en la pantalla: per
 | Zod + React Hook Form | Validación compartida entre formularios y API |
 | Recharts | Gráficos del panel |
 | OpenAPI 3.1 + Swagger UI | Documentación de la API, generada de los esquemas Zod |
+| Sentry | Errores del navegador y del servidor, rendimiento (tracing) y source maps |
 | Vitest | Pruebas unitarias y pruebas de integración de la API |
 | GitHub Actions | CI: lint, tipos, pruebas, build, verificaciones de la base de datos y pruebas de la API |
 
@@ -144,6 +145,18 @@ Las tres colecciones se generan a partir de la especificación con `npm run post
 
 `npm run test:api:setup` inicia un Supabase local desechable (requiere Docker) con usuarios de prueba, `npm run test:api:serve` compila e inicia la app en el puerto 3100 y `npm run test:api` ejecuta las pruebas. La CI hace lo mismo en cada push y además ejecuta las tres colecciones de Postman completas con [Newman](https://github.com/postmanlabs/newman).
 
+## Observabilidad
+
+Los errores y el rendimiento van a [Sentry](https://sentry.io), con el SDK oficial `@sentry/nextjs`.
+
+- **Qué se captura:** excepciones en el navegador, en los Server Components, en los Route Handlers de la API v1 y en el proxy, además de los errores de Supabase que se convierten en respuesta 500. Los errores esperados, como 400, 401, 403 y 404, quedan fuera.
+- **Rendimiento:** cada solicitud y cada navegación se registra como una transacción, con un muestreo del 10% en producción (`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` lo cambia).
+- **Privacidad:** el evento lleva solo el id y el perfil del usuario. Los encabezados `Authorization` y `Cookie`, el cuerpo de las solicitudes y los tokens en la URL se filtran antes del envío.
+- **Source maps:** se suben en `npm run build` cuando existe `SENTRY_AUTH_TOKEN` y luego se borran de la carpeta del build, así el stack trace muestra el código TypeScript original.
+- **Sin DSN, sin Sentry:** sin `NEXT_PUBLIC_SENTRY_DSN` el SDK queda apagado. Así corren las pruebas y el CI.
+
+Para activarlo, completa en `.env.local` (o en las variables de entorno del hosting Node.js) las variables de Sentry del [.env.example](.env.example). Deben existir **antes del build**, porque el DSN va dentro del código del navegador. Para comprobarlo, entra como administrador y abre `/api/debug/sentry`: la ruta lanza un error a propósito, que aparece en Issues en Sentry.
+
 ## Estructura del código
 
 ```text
@@ -158,6 +171,7 @@ pulsestock/
 │   ├── lib/
 │   │   ├── data/           # acceso a Supabase por módulo
 │   │   ├── openapi/        # especificación OpenAPI y colección de Postman
+│   │   ├── monitoring/     # opciones de Sentry y envío de errores tratados
 │   │   ├── supabase/       # clientes de Supabase (servidor y navegador)
 │   │   └── validations/    # esquemas Zod y pruebas
 │   ├── types/              # tipos generados de la base de datos

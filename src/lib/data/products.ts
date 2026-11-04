@@ -4,6 +4,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
+import { reportError } from "@/lib/monitoring/report";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import type {
   CategoryInput,
@@ -106,7 +107,7 @@ export function toDataError(error: PostgrestError, conflictMessage: string): Dat
     case "23514":
       return { status: 400, code: "invalid_data", message: "Dados inválidos." };
     default:
-      console.error("Erro do Supabase:", error.code, error.message);
+      reportError(error, { source: "supabase", code: error.code, extra: { hint: error.hint } });
       return { status: 500, code: "internal_error", message: "Erro inesperado. Tente de novo." };
   }
 }

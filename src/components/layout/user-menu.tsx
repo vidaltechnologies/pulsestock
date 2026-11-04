@@ -1,3 +1,4 @@
+import { MonitoringUser } from "@/components/monitoring/monitoring-user";
 import { Badge } from "@/components/ui/badge";
 import { requireUser } from "@/lib/auth";
 import { getI18n } from "@/lib/i18n/server";
@@ -9,6 +10,7 @@ export async function UserMenu() {
 
   return (
     <div className="flex items-center gap-3">
+      <MonitoringUser id={user.id} role={user.role} />
       <div className="hidden text-right sm:block">
         <p className="text-sm leading-tight font-medium">{user.fullName || user.email}</p>
         <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
