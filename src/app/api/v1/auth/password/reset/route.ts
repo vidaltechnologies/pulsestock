@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { apiError, parseJsonBody } from "@/lib/api";
+import { reportError } from "@/lib/monitoring/report";
 import { createClient } from "@/lib/supabase/server";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     return apiError(422, "weak_password", "Essa senha é fraca demais. Escolha outra.");
   }
   if (authError) {
-    console.error("Falha ao trocar a senha:", authError.code, authError.message);
+    reportError(authError, { source: "auth.password.reset", code: authError.code });
     return apiError(500, "unexpected", "Erro inesperado. Tente de novo.");
   }
 

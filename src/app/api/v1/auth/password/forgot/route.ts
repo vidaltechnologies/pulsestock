@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { apiError, parseJsonBody } from "@/lib/api";
+import { reportError } from "@/lib/monitoring/report";
 import { createStatelessClient } from "@/lib/supabase/stateless";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
 
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
     );
   }
   if (authError) {
-    console.error("Falha ao enviar o e-mail de recuperação:", authError.code, authError.message);
+    // A resposta continua 202 para não revelar se o e-mail existe.
+    reportError(authError, { source: "auth.password.forgot", code: authError.code });
   }
 
   return NextResponse.json({ ok: true }, { status: 202 });

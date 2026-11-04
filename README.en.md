@@ -81,6 +81,7 @@ The rules that must never fail live in PostgreSQL, not only in the UI: role-base
 | Zod + React Hook Form | Validation shared by forms and API |
 | Recharts | Dashboard charts |
 | OpenAPI 3.1 + Swagger UI | API documentation, generated from the Zod schemas |
+| Sentry | Browser and server errors, performance (tracing) and source maps |
 | Vitest | Unit tests and API integration tests |
 | GitHub Actions | CI: lint, types, tests, build, database checks and API tests |
 
@@ -144,6 +145,18 @@ The three collections are generated from the spec with `npm run postman`, and a 
 
 `npm run test:api:setup` starts a disposable local Supabase (needs Docker) with test users, `npm run test:api:serve` builds and starts the app on port 3100, and `npm run test:api` runs the tests. CI does the same on every push and also runs all three Postman collections with [Newman](https://github.com/postmanlabs/newman).
 
+## Observability
+
+Errors and performance go to [Sentry](https://sentry.io), through the official `@sentry/nextjs` SDK.
+
+- **What is captured:** exceptions in the browser, in Server Components, in the API v1 Route Handlers and in the proxy, plus Supabase errors that turn into a 500 response. Expected errors, such as 400, 401, 403 and 404, are left out.
+- **Performance:** every request and every navigation becomes a transaction, sampled at 10% in production (`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` changes it).
+- **Privacy:** events carry only the user's id and role. The `Authorization` and `Cookie` headers, request bodies and tokens in the URL are filtered out before sending.
+- **Source maps:** uploaded during `npm run build` when `SENTRY_AUTH_TOKEN` is set, then deleted from the build folder, so stack traces show the original TypeScript code.
+- **No DSN, no Sentry:** without `NEXT_PUBLIC_SENTRY_DSN` the SDK stays off. That is how tests and CI run.
+
+To turn it on, fill in the Sentry variables from [.env.example](.env.example) in `.env.local` (or in your Node.js host's environment variables). They must be set **before the build**, because the DSN is embedded in the browser code. To check it, sign in as an admin and open `/api/debug/sentry`: the route throws an error on purpose, which shows up under Issues in Sentry.
+
 ## Code structure
 
 ```text
@@ -158,6 +171,7 @@ pulsestock/
 │   ├── lib/
 │   │   ├── data/           # Supabase access per module
 │   │   ├── openapi/        # OpenAPI spec and Postman collection
+│   │   ├── monitoring/     # Sentry options and reporting of handled errors
 │   │   ├── supabase/       # Supabase clients (server and browser)
 │   │   └── validations/    # Zod schemas and tests
 │   ├── types/              # types generated from the database
